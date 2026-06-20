@@ -47,6 +47,8 @@ body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backg
 .tool-btn.primary:hover{background:#ff4444;box-shadow:0 0 20px rgba(255,51,51,0.3);}
 .tool-btn.blue{background:var(--blue);border-color:var(--blue);color:#fff;}
 .tool-btn.blue:hover{background:#4477ff;box-shadow:0 0 20px rgba(51,102,255,0.3);}
+.tool-btn.green{background:var(--green);border-color:var(--green);color:#000;}
+.tool-btn.green:hover{background:#00dd77;}
 .lyrics-container{flex:1;background:var(--surface);border:1px solid #222;border-radius:12px;padding:20px;position:relative;overflow:hidden;min-height:350px;}
 .lyrics-editor{width:100%;height:100%;min-height:310px;background:transparent;border:none;color:var(--text);font-family:'Space Mono',monospace;font-size:0.9rem;line-height:2;resize:none;outline:none;}
 .lyrics-editor::placeholder{color:#444;}
@@ -126,6 +128,15 @@ body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backg
 .toast.show{transform:translateX(0);}
 .loading-spinner{width:40px;height:40px;border:3px solid #333;border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;margin:40px auto;}
 @keyframes spin{to{transform:rotate(360deg);}}
+.api-key-section{background:var(--surface2);border:1px solid #2a2a2a;border-radius:12px;padding:16px;margin-bottom:16px;}
+.api-key-input{width:100%;background:var(--surface);border:1px solid #333;padding:10px 14px;color:var(--text);font-family:'Space Mono',monospace;font-size:0.8rem;border-radius:8px;outline:none;margin-bottom:10px;}
+.api-key-input:focus{border-color:var(--accent);}
+.api-key-help{font-size:0.7rem;color:var(--text2);line-height:1.5;margin-top:8px;}
+.youtube-btn{background:var(--accent);border:1px solid var(--accent);color:#fff;padding:10px 18px;border-radius:6px;cursor:pointer;font-weight:600;font-size:0.8rem;transition:all 0.2s;}
+.youtube-btn:hover{background:#ff4444;box-shadow:0 0 20px rgba(255,51,51,0.3);}
+.source-tabs{display:flex;gap:4px;margin-bottom:16px;}
+.source-tab{padding:8px 16px;background:var(--surface2);border:1px solid #333;color:var(--text2);font-size:0.75rem;font-weight:600;border-radius:6px;cursor:pointer;transition:all 0.2s;}
+.source-tab:hover,.source-tab.active{border-color:var(--accent);color:var(--accent);}
 ::-webkit-scrollbar{width:5px;}
 ::-webkit-scrollbar-track{background:var(--bg);}
 ::-webkit-scrollbar-thumb{background:#333;border-radius:3px;}
@@ -188,6 +199,7 @@ body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backg
     <div style="font-size:0.75rem;color:var(--text2);line-height:1.6;">
       <div style="margin-bottom:8px;"><strong>Freesound</strong> - Free community sounds</div>
       <div style="margin-bottom:8px;"><strong>Pixabay</strong> - No copyright music</div>
+      <div style="margin-bottom:8px;"><strong>YouTube</strong> - Search &amp; preview</div>
       <div style="margin-bottom:8px;"><strong>Miguel's Jukebox</strong> - Curated instrumentals</div>
     </div>
   </aside>
@@ -235,8 +247,33 @@ Tip: Go to the Beats tab to find instrumentals online." oninput="updateLineNumbe
   </section>
 
   <section class="beat-store" id="beatsTab">
-    <div class="beat-store-header">
-      <input type="text" class="beat-search" id="beatSearch" placeholder="Search beats... (e.g., 'trap', 'afrobeat', 'drill')" onkeyup="if(event.key==='Enter')searchBeats()">
+    <div class="source-tabs">
+      <button class="source-tab active" onclick="switchBeatSource('all')" id="tab-all">All Sources</button>
+      <button class="source-tab" onclick="switchBeatSource('freesound')" id="tab-freesound">Freesound API</button>
+      <button class="source-tab" onclick="switchBeatSource('youtube')" id="tab-youtube">YouTube Search</button>
+      <button class="source-tab" onclick="switchBeatSource('local')" id="tab-local">Offline Library</button>
+    </div>
+
+    <div id="apiKeySection" class="api-key-section" style="display:none;">
+      <div class="panel-title" style="margin-bottom:8px;">Freesound API Key</div>
+      <input type="text" class="api-key-input" id="freesoundApiKey" placeholder="Paste your Freesound API key here...">
+      <button class="tool-btn primary" onclick="saveApiKey()" style="width:100%;">Save Key & Search</button>
+      <div class="api-key-help">
+        Get a free API key at <a href="https://freesound.org/apiv2/apply/" target="_blank" style="color:var(--accent);">freesound.org/apiv2/apply</a>. 
+        Your key is stored locally in your browser only. No server, no tracking.
+      </div>
+    </div>
+
+    <div id="youtubeSection" class="api-key-section" style="display:none;">
+      <div class="panel-title" style="margin-bottom:8px;">YouTube Beat Search</div>
+      <div style="font-size:0.8rem;color:var(--text2);line-height:1.6;margin-bottom:12px;">
+        Search YouTube for type beats, instrumentals, and riddims. Results open in new tabs for preview.
+      </div>
+      <button class="youtube-btn" onclick="searchYouTube()" style="width:100%;">&#127909; Open YouTube Search</button>
+    </div>
+
+    <div class="beat-store-header" id="searchControls">
+      <input type="text" class="beat-search" id="beatSearch" placeholder="Search beats... (e.g., 'trap type beat', 'afrobeat instrumental', 'drill')" onkeyup="if(event.key==='Enter')searchBeats()">
       <select class="beat-filter" id="beatSource" onchange="searchBeats()">
         <option value="all">All Sources</option>
         <option value="freesound">Freesound</option>
@@ -337,14 +374,18 @@ let playlist = [];
 let playlistIndex = 0;
 let progressInterval = null;
 let visualizerInterval = null;
+let currentBeatSource = 'all';
+let freesoundApiKey = '';
 
 try {
   songs = JSON.parse(localStorage.getItem('miguel_jukebox_songs') || '[]');
   favorites = JSON.parse(localStorage.getItem('miguel_jukebox_favorites') || '[]');
+  freesoundApiKey = localStorage.getItem('miguel_jukebox_freesound_key') || '';
 } catch(e) {
   console.warn('localStorage not available');
   songs = [];
   favorites = [];
+  freesoundApiKey = '';
 }
 
 const genreData = {
@@ -414,6 +455,101 @@ function switchTab(tab) {
   document.getElementById('libraryTab').style.display = tab === 'library' ? 'flex' : 'none';
   if (tab === 'library') renderSongList();
   if (tab === 'beats' && beatResults.length === 0) searchBeats();
+}
+
+function switchBeatSource(source) {
+  currentBeatSource = source;
+  document.querySelectorAll('.source-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + source).classList.add('active');
+
+  const apiSection = document.getElementById('apiKeySection');
+  const youtubeSection = document.getElementById('youtubeSection');
+  const searchControls = document.getElementById('searchControls');
+
+  if (source === 'freesound') {
+    apiSection.style.display = 'block';
+    youtubeSection.style.display = 'none';
+    searchControls.style.display = 'flex';
+    if (freesoundApiKey) {
+      document.getElementById('freesoundApiKey').value = freesoundApiKey;
+    }
+  } else if (source === 'youtube') {
+    apiSection.style.display = 'none';
+    youtubeSection.style.display = 'block';
+    searchControls.style.display = 'none';
+  } else if (source === 'local') {
+    apiSection.style.display = 'none';
+    youtubeSection.style.display = 'none';
+    searchControls.style.display = 'flex';
+    searchBeats();
+  } else {
+    apiSection.style.display = 'none';
+    youtubeSection.style.display = 'none';
+    searchControls.style.display = 'flex';
+    searchBeats();
+  }
+}
+
+function saveApiKey() {
+  const key = document.getElementById('freesoundApiKey').value.trim();
+  if (!key) {
+    showToast('Enter a valid API key');
+    return;
+  }
+  freesoundApiKey = key;
+  try {
+    localStorage.setItem('miguel_jukebox_freesound_key', key);
+  } catch(e) {}
+  showToast('API key saved! Searching Freesound...');
+  searchFreesound();
+}
+
+function searchYouTube() {
+  const query = document.getElementById('beatSearch').value.trim() || 'type beat instrumental';
+  const genre = currentGenre;
+  const searchQuery = encodeURIComponent(query + ' ' + genre + ' type beat instrumental');
+  window.open('https://www.youtube.com/results?search_query=' + searchQuery, '_blank');
+  showToast('Opening YouTube search...');
+}
+
+async function searchFreesound() {
+  if (!freesoundApiKey) {
+    showToast('Add your Freesound API key first');
+    return;
+  }
+  const query = document.getElementById('beatSearch').value.trim() || 'hip hop beat';
+  const grid = document.getElementById('beatGrid');
+  grid.innerHTML = '<div style="grid-column:1/-1;"><div class="loading-spinner"></div></div>';
+
+  try {
+    const response = await fetch('https://freesound.org/apiv2/search/text/?query=' + encodeURIComponent(query) + '&token=' + freesoundApiKey + '&page_size=15&fields=id,name,username,duration,tags,previews,license');
+    if (!response.ok) throw new Error('API error: ' + response.status);
+    const data = await response.json();
+
+    if (!data.results || data.results.length === 0) {
+      grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:60px; color:var(--text2);"><div style="font-size:2.5rem; margin-bottom:12px;">&#128533;</div><div style="font-size:1rem; font-weight:600;">No beats found on Freesound</div><div style="font-size:0.8rem; margin-top:8px;">Try a different search term</div></div>';
+      return;
+    }
+
+    beatResults = data.results.map(sound => ({
+      id: 'fs_' + sound.id,
+      title: sound.name,
+      artist: sound.username,
+      genre: 'various',
+      bpm: '?',
+      duration: Math.floor(sound.duration),
+      tags: sound.tags ? sound.tags.slice(0, 3) : ['freesound'],
+      url: sound.previews ? sound.previews['preview-hq-mp3'] : '',
+      source: 'freesound',
+      license: sound.license
+    })).filter(b => b.url);
+
+    playlist = beatResults;
+    renderBeats();
+  } catch (err) {
+    console.error(err);
+    grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:60px; color:var(--text2);"><div style="font-size:2.5rem; margin-bottom:12px;">&#9888;</div><div style="font-size:1rem; font-weight:600;">Freesound API Error</div><div style="font-size:0.8rem; margin-top:8px;">' + escapeHtml(err.message) + '</div></div>';
+  }
 }
 
 function updateLineNumbers() {
@@ -579,6 +715,13 @@ function searchBeats() {
   const source = document.getElementById('beatSource').value;
   const genreFilter = document.getElementById('beatGenre').value;
   const grid = document.getElementById('beatGrid');
+
+  // If Freesound API tab is active and we have a key, use live search
+  if (currentBeatSource === 'freesound' && freesoundApiKey) {
+    searchFreesound();
+    return;
+  }
+
   grid.innerHTML = '<div style="grid-column:1/-1;"><div class="loading-spinner"></div></div>';
   let allBeats = [...miguelBeats, ...pixabayBeats, ...freesoundBeats];
   if (source !== 'all') allBeats = allBeats.filter(b => b.source === source);
@@ -586,36 +729,40 @@ function searchBeats() {
   if (query) allBeats = allBeats.filter(b => b.title.toLowerCase().includes(query) || b.artist.toLowerCase().includes(query) || b.tags.some(t => t.includes(query)));
   beatResults = allBeats;
   playlist = allBeats;
-  setTimeout(() => {
-    if (allBeats.length === 0) {
-      grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:60px; color:var(--text2);"><div style="font-size:2.5rem; margin-bottom:12px;">&#128533;</div><div style="font-size:1rem; font-weight:600;">No beats found</div><div style="font-size:0.8rem; margin-top:8px;">Try a different search or filter</div></div>';
-      return;
-    }
-    grid.innerHTML = allBeats.map((beat, idx) => {
-      const waveBars = Array.from({length: 20}, (_, i) => '<div class="beat-wave-bar" style="height:'+(Math.random()*30+5)+'px;animation-delay:'+(i*0.05)+'s"></div>').join('');
-      const sourceIcon = beat.source === 'miguel' ? '&#128308;' : beat.source === 'pixabay' ? '&#128994;' : '&#128309;';
-      return '<div class="beat-card '+(currentBeat && currentBeat.id === beat.id ? 'playing' : '')+'" id="beat-'+beat.id+'">' +
-        '<div class="beat-visual">' +
-        '<div class="beat-waveform">'+waveBars+'</div>' +
-        '<button class="beat-play-btn" onclick="playBeat('+idx+')">&#9654;</button>' +
-        '</div>' +
-        '<div class="beat-info">' +
-        '<div class="beat-title">'+escapeHtml(beat.title)+'</div>' +
-        '<div class="beat-meta">' +
-        '<span>'+sourceIcon+' '+escapeHtml(beat.artist)+'</span>' +
-        '<span>'+beat.bpm+' BPM</span>' +
-        '<span>'+formatTime(beat.duration)+'</span>' +
-        '</div>' +
-        '<div class="beat-tags">'+beat.tags.map(t => '<span class="beat-tag">'+t+'</span>').join('')+'</div>' +
-        '<div class="beat-actions">' +
-        '<button class="beat-action-btn primary" onclick="playBeat('+idx+')">Play</button>' +
-        '<button class="beat-action-btn" onclick="downloadBeat('+idx+')">Download</button>' +
-        '<button class="beat-action-btn" onclick="useBeat('+idx+')">Use This</button>' +
-        '</div>' +
-        '</div>' +
-        '</div>';
-    }).join('');
-  }, 500);
+  setTimeout(() => renderBeats(), 500);
+}
+
+function renderBeats() {
+  const grid = document.getElementById('beatGrid');
+  if (beatResults.length === 0) {
+    grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:60px; color:var(--text2);"><div style="font-size:2.5rem; margin-bottom:12px;">&#128533;</div><div style="font-size:1rem; font-weight:600;">No beats found</div><div style="font-size:0.8rem; margin-top:8px;">Try a different search or filter</div></div>';
+    return;
+  }
+  grid.innerHTML = beatResults.map((beat, idx) => {
+    const waveBars = Array.from({length: 20}, (_, i) => '<div class="beat-wave-bar" style="height:'+(Math.random()*30+5)+'px;animation-delay:'+(i*0.05)+'s"></div>').join('');
+    const sourceIcon = beat.source === 'miguel' ? '&#128308;' : beat.source === 'pixabay' ? '&#128994;' : beat.source === 'freesound' ? '&#128309;' : '&#127925;';
+    const bpmDisplay = beat.bpm === '?' ? '' : '<span>'+beat.bpm+' BPM</span>';
+    return '<div class="beat-card '+(currentBeat && currentBeat.id === beat.id ? 'playing' : '')+'" id="beat-'+beat.id+'">' +
+      '<div class="beat-visual">' +
+      '<div class="beat-waveform">'+waveBars+'</div>' +
+      '<button class="beat-play-btn" onclick="playBeat('+idx+')">&#9654;</button>' +
+      '</div>' +
+      '<div class="beat-info">' +
+      '<div class="beat-title">'+escapeHtml(beat.title)+'</div>' +
+      '<div class="beat-meta">' +
+      '<span>'+sourceIcon+' '+escapeHtml(beat.artist)+'</span>' +
+      bpmDisplay +
+      '<span>'+formatTime(beat.duration)+'</span>' +
+      '</div>' +
+      '<div class="beat-tags">'+beat.tags.map(t => '<span class="beat-tag">'+t+'</span>').join('')+'</div>' +
+      '<div class="beat-actions">' +
+      '<button class="beat-action-btn primary" onclick="playBeat('+idx+')">Play</button>' +
+      '<button class="beat-action-btn" onclick="downloadBeat('+idx+')">Download</button>' +
+      '<button class="beat-action-btn" onclick="useBeat('+idx+')">Use This</button>' +
+      '</div>' +
+      '</div>' +
+      '</div>';
+  }).join('');
 }
 
 function formatTime(seconds) {
@@ -648,7 +795,7 @@ function updatePlayerUI() {
   if (card) card.classList.add('playing');
   document.getElementById('nowPlaying').classList.add('active');
   document.getElementById('npTitle').textContent = currentBeat.title;
-  document.getElementById('npArtist').textContent = currentBeat.artist + ' | ' + currentBeat.bpm + ' BPM';
+  document.getElementById('npArtist').textContent = currentBeat.artist + ' | ' + (currentBeat.bpm === '?' ? 'Unknown BPM' : currentBeat.bpm + ' BPM');
   document.getElementById('npPlayBtn').textContent = '&#9208;';
   document.getElementById('miniPlayerSection').style.display = 'block';
   document.getElementById('miniPlayerTitle').textContent = currentBeat.title;
@@ -756,7 +903,7 @@ function useBeat(idx) {
   if (!beat) return;
   currentBeat = beat;
   switchTab('write');
-  showToast('Using beat: ' + beat.title + ' (' + beat.bpm + ' BPM)');
+  showToast('Using beat: ' + beat.title + (beat.bpm !== '?' ? ' (' + beat.bpm + ' BPM)' : ''));
 }
 
 function addToFavorites() {
