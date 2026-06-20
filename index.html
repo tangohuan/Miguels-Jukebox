@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MIGELS JUKEBOX - Songwriting Companion + Beat Store</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600;800&family=Space+Mono:wght@400;700&display=swap');
+:root{--bg:#0a0a0a;--surface:#141414;--surface2:#1e1e1e;--surface3:#252525;--accent:#ff3333;--accent2:#ff6600;--text:#e8e8e8;--text2:#888;--green:#00ff88;--blue:#3366ff;--yellow:#ffcc00;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:9999;}
+.header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #222;position:sticky;top:0;background:rgba(10,10,10,0.95);backdrop-filter:blur(20px);z-index:100;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:4px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;cursor:pointer;}
+.logo span{color:var(--text2);-webkit-text-fill-color:var(--text2);}
+.nav-tabs{display:flex;gap:6px;}
+.nav-tab{padding:10px 20px;border:1px solid #333;background:transparent;color:var(--text2);font-family:'Inter',sans-serif;font-size:0.8rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;cursor:pointer;transition:all 0.3s ease;border-radius:4px;}
+.nav-tab:hover,.nav-tab.active{border-color:var(--accent);color:var(--accent);box-shadow:0 0 20px rgba(255,51,51,0.15);}
+.main{display:grid;grid-template-columns:260px 1fr 300px;gap:0;min-height:calc(100vh - 70px);}
+.sidebar{background:var(--surface);border-right:1px solid #222;padding:20px;overflow-y:auto;}
+.sidebar-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--text2);margin-bottom:14px;text-transform:uppercase;}
+.genre-card{background:var(--surface2);border:1px solid #2a2a2a;border-radius:8px;padding:14px;margin-bottom:10px;cursor:pointer;transition:all 0.3s ease;position:relative;overflow:hidden;}
+.genre-card::before{content:'';position:absolute;left:0;top:0;width:3px;height:100%;background:var(--accent);opacity:0;transition:opacity 0.3s;}
+.genre-card:hover::before,.genre-card.active::before{opacity:1;}
+.genre-card:hover,.genre-card.active{border-color:var(--accent);transform:translateX(4px);}
+.genre-name{font-weight:700;font-size:0.9rem;margin-bottom:4px;display:flex;align-items:center;gap:6px;}
+.genre-desc{font-size:0.72rem;color:var(--text2);line-height:1.4;}
+.genre-tag{display:inline-block;padding:2px 6px;background:rgba(255,51,51,0.15);color:var(--accent);font-size:0.6rem;border-radius:4px;font-weight:700;text-transform:uppercase;letter-spacing:1px;}
+.editor-area{padding:24px;display:flex;flex-direction:column;gap:16px;}
+.song-header{display:flex;gap:12px;align-items:center;}
+.song-title-input{flex:1;background:var(--surface);border:1px solid #333;padding:12px 18px;color:var(--text);font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:2px;border-radius:8px;outline:none;transition:border-color 0.3s;}
+.song-title-input:focus{border-color:var(--accent);}
+.song-title-input::placeholder{color:#444;}
+.mode-toggle{display:flex;align-items:center;gap:8px;padding:8px 16px;background:var(--surface);border:1px solid #333;border-radius:8px;cursor:pointer;transition:all 0.3s;white-space:nowrap;}
+.mode-toggle:hover{border-color:var(--accent);}
+.mode-toggle input{display:none;}
+.toggle-slider{width:40px;height:22px;background:#333;border-radius:11px;position:relative;transition:background 0.3s;}
+.toggle-slider::after{content:'';position:absolute;width:18px;height:18px;background:var(--text);border-radius:50%;top:2px;left:2px;transition:all 0.3s;}
+.mode-toggle input:checked + .toggle-slider{background:var(--accent);}
+.mode-toggle input:checked + .toggle-slider::after{left:20px;background:#fff;}
+.mode-label{font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text2);}
+.mode-label.toxic{color:var(--accent);}
+.toolbar{display:flex;gap:6px;padding:10px;background:var(--surface2);border-radius:8px;flex-wrap:wrap;}
+.tool-btn{padding:8px 14px;background:transparent;border:1px solid #333;color:var(--text2);font-family:'Inter',sans-serif;font-size:0.75rem;font-weight:600;cursor:pointer;border-radius:6px;transition:all 0.2s;display:flex;align-items:center;gap:5px;}
+.tool-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(255,51,51,0.05);}
+.tool-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+.tool-btn.primary:hover{background:#ff4444;box-shadow:0 0 20px rgba(255,51,51,0.3);}
+.tool-btn.blue{background:var(--blue);border-color:var(--blue);color:#fff;}
+.tool-btn.blue:hover{background:#4477ff;box-shadow:0 0 20px rgba(51,102,255,0.3);}
+.lyrics-container{flex:1;background:var(--surface);border:1px solid #222;border-radius:12px;padding:20px;position:relative;overflow:hidden;min-height:350px;}
+.lyrics-editor{width:100%;height:100%;min-height:310px;background:transparent;border:none;color:var(--text);font-family:'Space Mono',monospace;font-size:0.9rem;line-height:2;resize:none;outline:none;}
+.lyrics-editor::placeholder{color:#444;}
+.line-numbers{position:absolute;left:0;top:20px;width:36px;text-align:right;color:#444;font-family:'Space Mono',monospace;font-size:0.75rem;line-height:2;pointer-events:none;padding-right:10px;border-right:1px solid #2a2a2a;}
+.lyrics-editor{padding-left:48px;}
+.stats-bar{display:flex;gap:16px;padding:8px 14px;background:var(--surface2);border-radius:6px;font-size:0.75rem;color:var(--text2);font-family:'Space Mono',monospace;}
+.stats-bar span{color:var(--accent);font-weight:700;}
+.beat-store{padding:24px;display:none;flex-direction:column;gap:20px;overflow-y:auto;}
+.beat-store-header{display:flex;gap:16px;align-items:center;flex-wrap:wrap;}
+.beat-search{flex:1;min-width:250px;background:var(--surface);border:1px solid #333;padding:12px 18px;color:var(--text);font-family:'Inter',sans-serif;font-size:0.9rem;border-radius:8px;outline:none;}
+.beat-search:focus{border-color:var(--accent);}
+.beat-filter{padding:10px 16px;background:var(--surface2);border:1px solid #333;color:var(--text2);font-family:'Inter',sans-serif;font-size:0.8rem;border-radius:6px;cursor:pointer;outline:none;}
+.beat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+.beat-card{background:var(--surface2);border:1px solid #2a2a2a;border-radius:12px;overflow:hidden;transition:all 0.3s ease;cursor:pointer;}
+.beat-card:hover{border-color:var(--accent);transform:translateY(-4px);box-shadow:0 10px 40px rgba(255,51,51,0.1);}
+.beat-card.playing{border-color:var(--green);box-shadow:0 0 30px rgba(0,255,136,0.15);}
+.beat-visual{height:120px;background:linear-gradient(135deg,var(--surface3),var(--surface));display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+.beat-visual::before{content:'';position:absolute;width:100%;height:100%;background:repeating-linear-gradient(90deg,transparent,transparent 2px,rgba(255,51,51,0.03) 2px,rgba(255,51,51,0.03) 4px);}
+.beat-waveform{display:flex;align-items:center;gap:2px;height:40px;}
+.beat-wave-bar{width:3px;background:var(--accent);border-radius:2px;opacity:0.6;transition:height 0.2s;}
+.beat-card.playing .beat-wave-bar{animation:wave 0.5s ease-in-out infinite alternate;}
+@keyframes wave{0%{height:5px;opacity:0.4;}100%{height:35px;opacity:1;}}
+.beat-play-btn{width:48px;height:48px;border-radius:50%;background:var(--accent);border:none;color:#fff;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.3s;z-index:2;}
+.beat-play-btn:hover{transform:scale(1.1);box-shadow:0 0 20px rgba(255,51,51,0.4);}
+.beat-info{padding:14px;}
+.beat-title{font-weight:700;font-size:0.95rem;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.beat-meta{font-size:0.75rem;color:var(--text2);display:flex;gap:12px;margin-bottom:10px;}
+.beat-tags{display:flex;gap:6px;flex-wrap:wrap;}
+.beat-tag{padding:3px 10px;background:var(--surface);border:1px solid #333;border-radius:12px;font-size:0.7rem;color:var(--text2);}
+.beat-actions{display:flex;gap:8px;margin-top:12px;}
+.beat-action-btn{flex:1;padding:8px;background:var(--surface);border:1px solid #333;color:var(--text2);font-size:0.75rem;font-weight:600;border-radius:6px;cursor:pointer;transition:all 0.2s;text-align:center;}
+.beat-action-btn:hover{border-color:var(--accent);color:var(--accent);}
+.beat-action-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+.beat-action-btn.primary:hover{background:#ff4444;}
+.now-playing{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid #333;padding:12px 24px;display:none;align-items:center;gap:16px;z-index:200;backdrop-filter:blur(20px);}
+.now-playing.active{display:flex;}
+.np-info{flex:1;}
+.np-title{font-weight:700;font-size:0.9rem;}
+.np-artist{font-size:0.75rem;color:var(--text2);}
+.np-controls{display:flex;align-items:center;gap:12px;}
+.np-btn{width:36px;height:36px;border-radius:50%;border:1px solid #333;background:transparent;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;}
+.np-btn:hover{border-color:var(--accent);color:var(--accent);}
+.np-btn.play{background:var(--accent);border-color:var(--accent);color:#fff;}
+.np-progress{flex:1;max-width:300px;height:4px;background:#333;border-radius:2px;cursor:pointer;position:relative;}
+.np-progress-bar{height:100%;background:var(--accent);border-radius:2px;width:0%;transition:width 0.1s;}
+.np-time{font-family:'Space Mono',monospace;font-size:0.75rem;color:var(--text2);}
+.right-panel{background:var(--surface);border-left:1px solid #222;padding:20px;display:flex;flex-direction:column;gap:16px;overflow-y:auto;}
+.panel-section{background:var(--surface2);border:1px solid #2a2a2a;border-radius:12px;padding:16px;}
+.panel-title{font-family:'Bebas Neue',sans-serif;font-size:0.95rem;letter-spacing:2px;color:var(--text2);margin-bottom:12px;text-transform:uppercase;}
+.rhyme-input{width:100%;background:var(--surface);border:1px solid #333;padding:10px 14px;color:var(--text);font-family:'Inter',sans-serif;font-size:0.85rem;border-radius:8px;outline:none;margin-bottom:10px;}
+.rhyme-input:focus{border-color:var(--accent);}
+.rhyme-results{display:flex;flex-wrap:wrap;gap:6px;max-height:150px;overflow-y:auto;}
+.rhyme-word{padding:5px 12px;background:var(--surface);border:1px solid #333;border-radius:20px;font-size:0.8rem;cursor:pointer;transition:all 0.2s;font-family:'Space Mono',monospace;}
+.rhyme-word:hover{border-color:var(--green);color:var(--green);transform:scale(1.05);}
+.beat-visualizer{height:60px;background:var(--surface);border-radius:8px;display:flex;align-items:flex-end;justify-content:center;gap:3px;padding:10px;margin-bottom:12px;overflow:hidden;}
+.beat-bar{width:5px;background:linear-gradient(to top,var(--accent),var(--accent2));border-radius:3px;transition:height 0.1s ease;opacity:0.7;}
+.beat-controls{display:flex;gap:10px;align-items:center;}
+.beat-btn{width:40px;height:40px;border-radius:50%;border:2px solid var(--accent);background:transparent;color:var(--accent);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.3s;}
+.beat-btn:hover{background:var(--accent);color:#fff;box-shadow:0 0 20px rgba(255,51,51,0.3);}
+.ai-chat{flex:1;display:flex;flex-direction:column;gap:10px;max-height:280px;overflow-y:auto;}
+.ai-message{padding:10px 14px;background:var(--surface);border-radius:10px;font-size:0.8rem;line-height:1.5;border-left:3px solid var(--accent);}
+.ai-message.user{border-left-color:var(--green);background:rgba(0,255,136,0.05);}
+.ai-input-area{display:flex;gap:6px;margin-top:10px;}
+.ai-input{flex:1;background:var(--surface);border:1px solid #333;padding:10px 14px;color:var(--text);font-family:'Inter',sans-serif;font-size:0.8rem;border-radius:8px;outline:none;}
+.ai-input:focus{border-color:var(--accent);}
+.song-list{display:flex;flex-direction:column;gap:6px;}
+.song-item{padding:10px 14px;background:var(--surface);border:1px solid #2a2a2a;border-radius:8px;cursor:pointer;transition:all 0.2s;display:flex;justify-content:space-between;align-items:center;}
+.song-item:hover{border-color:var(--accent);transform:translateX(4px);}
+.song-item-title{font-weight:600;font-size:0.85rem;}
+.song-item-date{font-size:0.65rem;color:var(--text2);font-family:'Space Mono',monospace;}
+.library-view{padding:24px;display:none;flex-direction:column;gap:20px;}
+.toxic-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,0,0,0.03);pointer-events:none;z-index:50;opacity:0;transition:opacity 0.5s;}
+.toxic-overlay.active{opacity:1;}
+.toxic-border{position:fixed;top:0;left:0;width:100%;height:100%;border:2px solid transparent;pointer-events:none;z-index:51;transition:border-color 0.5s;}
+.toxic-border.active{border-color:rgba(255,51,51,0.3);box-shadow:inset 0 0 100px rgba(255,51,51,0.05);}
+.toast{position:fixed;bottom:80px;right:24px;padding:14px 20px;background:var(--surface2);border:1px solid var(--accent);border-radius:8px;color:var(--text);font-weight:600;z-index:1000;transform:translateX(400px);transition:transform 0.3s ease;font-size:0.85rem;}
+.toast.show{transform:translateX(0);}
+.loading-spinner{width:40px;height:40px;border:3px solid #333;border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;margin:40px auto;}
+@keyframes spin{to{transform:rotate(360deg);}}
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:#333;border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:#444;}
+@media(max-width:1100px){.main{grid-template-columns:220px 1fr 260px;}}
+@media(max-width:900px){.main{grid-template-columns:1fr;}.sidebar,.right-panel{display:none;}.now-playing{padding:10px 16px;}}
+</style>
+<base target="_blank">
+<base target="_blank">
+</head>
+<body>
+<div class="toxic-overlay" id="toxicOverlay"></div>
+<div class="toxic-border" id="toxicBorder"></div>
+
+<header class="header">
+  <div class="logo" onclick="switchTab('write')">MIGEL<span>JUKEBOX</span></div>
+  <nav class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('write')">Write</button>
+    <button class="nav-tab" onclick="switchTab('beats')">Beats</button>
+    <button class="nav-tab" onclick="switchTab('library')">Library</button>
+  </nav>
+</header>
+
+<div class="main">
+  <aside class="sidebar">
+    <div class="sidebar-title">Genres &amp; Styles</div>
+    <div class="genre-card active" data-genre="gengetone" onclick="selectGenre(this)">
+      <div class="genre-name">Gengetone <span class="genre-tag">Hot</span></div>
+      <div class="genre-desc">Sheng bars, heavy bass, raw street energy</div>
+    </div>
+    <div class="genre-card" data-genre="bongo" onclick="selectGenre(this)">
+      <div class="genre-name">Bongo Flava</div>
+      <div class="genre-desc">Smooth Tanzanian flows, Swahili romance</div>
+    </div>
+    <div class="genre-card" data-genre="afrobeats" onclick="selectGenre(this)">
+      <div class="genre-name">Afrobeats</div>
+      <div class="genre-desc">Percussive, melodic, party anthems</div>
+    </div>
+    <div class="genre-card" data-genre="dancehall" onclick="selectGenre(this)">
+      <div class="genre-name">Dancehall <span class="genre-tag">Jamdown</span></div>
+      <div class="genre-desc">Jamaican riddim, sound clash energy</div>
+    </div>
+    <div class="genre-card" data-genre="toxic" onclick="selectGenre(this)">
+      <div class="genre-name">Toxic Lyrikali</div>
+      <div class="genre-desc">Raw, unfiltered, confrontational bars</div>
+    </div>
+    <div class="genre-card" data-genre="kapuka" onclick="selectGenre(this)">
+      <div class="genre-name">Kapuka</div>
+      <div class="genre-desc">Classic Kenyan hip-hop, storytelling</div>
+    </div>
+    <div class="genre-card" data-genre="gospel" onclick="selectGenre(this)">
+      <div class="genre-name">Gospel</div>
+      <div class="genre-desc">Inspirational, worship, praise</div>
+    </div>
+    <div class="genre-card" data-genre="trap" onclick="selectGenre(this)">
+      <div class="genre-name">Trap</div>
+      <div class="genre-desc">Dark 808s, hi-hats, autotune</div>
+    </div>
+    <div class="sidebar-title" style="margin-top:20px;">Beat Sources</div>
+    <div style="font-size:0.75rem;color:var(--text2);line-height:1.6;">
+      <div style="margin-bottom:8px;"><strong>Freesound</strong> - Free community sounds</div>
+      <div style="margin-bottom:8px;"><strong>Pixabay</strong> - No copyright music</div>
+      <div style="margin-bottom:8px;"><strong>Migels Jukebox</strong> - Curated instrumentals</div>
+    </div>
+  </aside>
+
+  <section class="editor-area" id="writeTab">
+    <div class="song-header">
+      <input type="text" class="song-title-input" id="songTitle" placeholder="UNTITLED SONG...">
+      <label class="mode-toggle">
+        <span class="mode-label">Normal</span>
+        <input type="checkbox" id="toxicMode" onchange="toggleToxicMode()">
+        <span class="toggle-slider"></span>
+        <span class="mode-label toxic">TOXIC</span>
+      </label>
+    </div>
+    <div class="toolbar">
+      <button class="tool-btn" onclick="insertSection('[VERSE]')">Verse</button>
+      <button class="tool-btn" onclick="insertSection('[HOOK]')">Hook</button>
+      <button class="tool-btn" onclick="insertSection('[BRIDGE]')">Bridge</button>
+      <button class="tool-btn" onclick="insertSection('[OUTRO]')">Outro</button>
+      <button class="tool-btn" onclick="findRhymes()">Rhymes</button>
+      <button class="tool-btn blue" onclick="switchTab('beats')">Find Beats</button>
+      <button class="tool-btn primary" onclick="saveSong()">Save</button>
+      <button class="tool-btn" onclick="clearEditor()">Clear</button>
+      <button class="tool-btn" onclick="exportSong()">Export</button>
+    </div>
+    <div class="stats-bar" id="statsBar">
+      <div>Words: <span id="wordCount">0</span></div>
+      <div>Lines: <span id="lineCount">0</span></div>
+      <div>Bars: <span id="barCount">0</span></div>
+      <div>Genre: <span id="currentGenreDisplay">Gengetone</span></div>
+      <div>Mode: <span id="currentModeDisplay">Normal</span></div>
+      <div id="autoSaveStatus" style="margin-left:auto;color:#444;">Auto-save: Ready</div>
+    </div>
+    <div class="lyrics-container">
+      <div class="line-numbers" id="lineNumbers">1</div>
+      <textarea class="lyrics-editor" id="lyricsEditor" placeholder="Start writing your bars here...
+
+[VERSE 1]
+Drop your first line,
+Let the rhythm guide your mind,
+Every bar a weapon, every rhyme designed...
+
+Tip: Go to the Beats tab to find instrumentals online." oninput="updateLineNumbers();updateStats()" onscroll="syncScroll()"></textarea>
+    </div>
+  </section>
+
+  <section class="beat-store" id="beatsTab">
+    <div class="beat-store-header">
+      <input type="text" class="beat-search" id="beatSearch" placeholder="Search beats... (e.g., 'trap', 'afrobeat', 'drill')" onkeyup="if(event.key==='Enter')searchBeats()">
+      <select class="beat-filter" id="beatSource" onchange="searchBeats()">
+        <option value="all">All Sources</option>
+        <option value="freesound">Freesound</option>
+        <option value="pixabay">Pixabay</option>
+        <option value="miguel">Migels Jukebox</option>
+      </select>
+      <select class="beat-filter" id="beatGenre" onchange="searchBeats()">
+        <option value="all">All Genres</option>
+        <option value="hiphop">Hip-Hop</option>
+        <option value="trap">Trap</option>
+        <option value="afrobeat">Afrobeat</option>
+        <option value="dancehall">Dancehall</option>
+        <option value="drill">Drill</option>
+        <option value="rnb">R&amp;B</option>
+        <option value="lofi">Lo-Fi</option>
+      </select>
+      <button class="tool-btn primary" onclick="searchBeats()">Search</button>
+    </div>
+    <div class="beat-grid" id="beatGrid">
+      <div style="grid-column:1/-1; text-align:center; padding:60px; color:var(--text2);">
+        <div style="font-size:3rem; margin-bottom:16px;">&#127911;</div>
+        <div style="font-size:1.1rem; font-weight:600; margin-bottom:8px;">Find Your Sound</div>
+        <div style="font-size:0.85rem;">Search for beats above or browse curated instrumentals below</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="library-view" id="libraryTab">
+    <div class="song-header">
+      <div style="font-family:'Bebas Neue'; font-size:1.5rem; letter-spacing:2px;">YOUR CATALOG</div>
+    </div>
+    <div class="song-list" id="songList"></div>
+  </section>
+
+  <aside class="right-panel">
+    <div class="panel-section">
+      <div class="panel-title">Rhyme Engine</div>
+      <input type="text" class="rhyme-input" id="rhymeInput" placeholder="Type a word..." onkeyup="if(event.key=='Enter')searchRhymes()">
+      <button class="tool-btn primary" style="width:100%; margin-bottom:10px; font-size:0.8rem;" onclick="searchRhymes()">Find Rhymes</button>
+      <div class="rhyme-results" id="rhymeResults">
+        <span style="color:#444; font-size:0.75rem;">Enter a word to find rhymes...</span>
+      </div>
+    </div>
+    <div class="panel-section" id="miniPlayerSection" style="display:none;">
+      <div class="panel-title">Now Playing</div>
+      <div style="font-size:0.85rem; font-weight:600; margin-bottom:4px;" id="miniPlayerTitle">-</div>
+      <div style="font-size:0.75rem; color:var(--text2); margin-bottom:10px;" id="miniPlayerArtist">-</div>
+      <div class="beat-visualizer" id="miniVisualizer"></div>
+      <div class="beat-controls">
+        <button class="beat-btn" style="width:36px;height:36px;font-size:0.85rem;" onclick="togglePlay()" id="miniPlayBtn">&#9654;</button>
+        <button class="beat-btn" style="width:36px;height:36px;font-size:0.85rem;" onclick="stopAudio()">&#9632;</button>
+      </div>
+    </div>
+    <div class="panel-section" style="flex:1; display:flex; flex-direction:column;">
+      <div class="panel-title">Migels Jukebox AI</div>
+      <div class="ai-chat" id="aiChat">
+        <div class="ai-message">Yo, I am your Migels Jukebox AI. Need help with bars, hooks, or finding the right flow? Just ask.</div>
+      </div>
+      <div class="ai-input-area">
+        <input type="text" class="ai-input" id="aiInput" placeholder="Ask for help..." onkeyup="if(event.key=='Enter')sendAIMessage()">
+        <button class="tool-btn primary" style="padding:10px 14px;" onclick="sendAIMessage()">Send</button>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<div class="now-playing" id="nowPlaying">
+  <div class="np-info">
+    <div class="np-title" id="npTitle">-</div>
+    <div class="np-artist" id="npArtist">-</div>
+  </div>
+  <div class="np-controls">
+    <button class="np-btn" onclick="skipBackward()">&#9198;</button>
+    <button class="np-btn play" id="npPlayBtn" onclick="togglePlay()">&#9654;</button>
+    <button class="np-btn" onclick="skipForward()">&#9197;</button>
+  </div>
+  <div class="np-progress" onclick="seekAudio(event)">
+    <div class="np-progress-bar" id="npProgressBar"></div>
+  </div>
+  <div class="np-time" id="npTime">0:00 / 0:00</div>
+  <button class="np-btn" onclick="addToFavorites()" title="Add to favorites">&#9829;</button>
+  <button class="np-btn" onclick="closePlayer()" title="Close">&#10005;</button>
+</div>
+
+<div class="toast" id="toast">Song saved!</div>
+
+<script>
+
+let currentGenre = 'gengetone';
+let toxicMode = false;
+let songs = [];
+let favorites = [];
+let currentAudio = null;
+let isPlaying = false;
+let currentBeat = null;
+let beatResults = [];
+let playlist = [];
+let playlistIndex = 0;
+let progressInterval = null;
+let visualizerInterval = null;
+
+try {
+  songs = JSON.parse(localStorage.getItem('miguel_jukebox_songs') || '[]');
+  favorites = JSON.parse(localStorage.getItem('miguel_jukebox_favorites') || '[]');
+} catch(e) {
+  console.warn('localStorage not available');
+  songs = [];
+  favorites = [];
+}
+
+const genreData = {
+  gengetone: { name: 'Gengetone', bpm: 100, prompts: ['Sheng bars', 'Party anthem', 'Street hustle'] },
+  bongo: { name: 'Bongo Flava', bpm: 95, prompts: ['Romantic Swahili', 'Heartbreak', 'Success journey'] },
+  afrobeats: { name: 'Afrobeats', bpm: 110, prompts: ['Party starter', 'African queen', 'Money moves'] },
+  dancehall: { name: 'Dancehall', bpm: 100, prompts: ['Sound clash', 'Badman tune', 'Gyal tune'] },
+  toxic: { name: 'Toxic Lyrikali', bpm: 140, prompts: ['Dark confession', 'Street warfare', 'Revenge'] },
+  kapuka: { name: 'Kapuka', bpm: 90, prompts: ['Conscious bars', 'Hood stories', 'Political'] },
+  gospel: { name: 'Gospel', bpm: 85, prompts: ['Praise anthem', 'Testimony', 'Worship'] },
+  trap: { name: 'Trap', bpm: 140, prompts: ['Flex anthem', 'Struggle story', 'Trap house'] }
+};
+
+const miguelBeats = [
+  { id: 'jd1', title: 'Nairobi Night', artist: 'Migels Jukebox', genre: 'afrobeat', bpm: 108, duration: 180, tags: ['afrobeat','kenyan','bouncy'], url: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=afrobeat-112774.mp3', source: 'miguel' },
+  { id: 'jd2', title: 'Eastlands Drill', artist: 'Migels Jukebox', genre: 'drill', bpm: 142, duration: 160, tags: ['drill','dark','aggressive'], url: 'https://cdn.pixabay.com/download/audio/2022/03/24/audio_1a4c4c77e6.mp3?filename=drill-112210.mp3', source: 'miguel' },
+  { id: 'jd3', title: 'Mombasa Vibes', artist: 'Migels Jukebox', genre: 'dancehall', bpm: 96, duration: 200, tags: ['dancehall','tropical','smooth'], url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=reggae-island-110111.mp3', source: 'miguel' },
+  { id: 'jd4', title: 'Gengetone Banger', artist: 'Migels Jukebox', genre: 'hiphop', bpm: 102, duration: 175, tags: ['gengetone','street','heavy'], url: 'https://cdn.pixabay.com/download/audio/2022/11/22/audio_febc508520.mp3?filename=hip-hop-130bpm-121529.mp3', source: 'miguel' },
+  { id: 'jd5', title: 'Toxic Mode', artist: 'Migels Jukebox', genre: 'trap', bpm: 145, duration: 150, tags: ['trap','dark','toxic'], url: 'https://cdn.pixabay.com/download/audio/2022/10/25/audio_5f3a27459c.mp3?filename=trap-future-bass-royalty-free-music-123123.mp3', source: 'miguel' },
+  { id: 'jd6', title: 'Bongo Love', artist: 'Migels Jukebox', genre: 'rnb', bpm: 88, duration: 220, tags: ['bongo','rnb','romantic'], url: 'https://cdn.pixabay.com/download/audio/2022/01/21/audio_31743c58bd.mp3?filename=relaxing-mountains-rivers-streams-running-water-18178.mp3', source: 'miguel' },
+  { id: 'jd7', title: 'Kasarani Freestyle', artist: 'Migels Jukebox', genre: 'hiphop', bpm: 95, duration: 190, tags: ['boombap','freestyle','old school'], url: 'https://cdn.pixabay.com/download/audio/2022/11/02/audio_9e2f97dda7.mp3?filename=lofi-study-112191.mp3', source: 'miguel' },
+  { id: 'jd8', title: 'Riddim Rider', artist: 'Migels Jukebox', genre: 'dancehall', bpm: 98, duration: 185, tags: ['dancehall','riddim','bashment'], url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=reggae-island-110111.mp3', source: 'miguel' }
+];
+
+const pixabayBeats = [
+  { id: 'px1', title: 'Afro Beat Instrumental', artist: 'Pixabay Music', genre: 'afrobeat', bpm: 110, duration: 195, tags: ['afrobeat','instrumental','no copyright'], url: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=afrobeat-112774.mp3', source: 'pixabay' },
+  { id: 'px2', title: 'Trap Beat Hard', artist: 'Pixabay Music', genre: 'trap', bpm: 140, duration: 170, tags: ['trap','hard','808'], url: 'https://cdn.pixabay.com/download/audio/2022/10/25/audio_5f3a27459c.mp3?filename=trap-future-bass-royalty-free-music-123123.mp3', source: 'pixabay' },
+  { id: 'px3', title: 'Hip Hop Classic', artist: 'Pixabay Music', genre: 'hiphop', bpm: 92, duration: 210, tags: ['hiphop','classic','boombap'], url: 'https://cdn.pixabay.com/download/audio/2022/11/02/audio_9e2f97dda7.mp3?filename=lofi-study-112191.mp3', source: 'pixabay' },
+  { id: 'px4', title: 'Drill Type Beat', artist: 'Pixabay Music', genre: 'drill', bpm: 144, duration: 155, tags: ['drill','dark','uk'], url: 'https://cdn.pixabay.com/download/audio/2022/03/24/audio_1a4c4c77e6.mp3?filename=drill-112210.mp3', source: 'pixabay' },
+  { id: 'px5', title: 'Lo-Fi Chill', artist: 'Pixabay Music', genre: 'lofi', bpm: 80, duration: 240, tags: ['lofi','chill','study'], url: 'https://cdn.pixabay.com/download/audio/2022/11/02/audio_9e2f97dda7.mp3?filename=lofi-study-112191.mp3', source: 'pixabay' },
+  { id: 'px6', title: 'R&B Smooth', artist: 'Pixabay Music', genre: 'rnb', bpm: 85, duration: 225, tags: ['rnb','smooth','soul'], url: 'https://cdn.pixabay.com/download/audio/2022/01/21/audio_31743c58bd.mp3?filename=relaxing-mountains-rivers-streams-running-water-18178.mp3', source: 'pixabay' }
+];
+
+const freesoundBeats = [
+  { id: 'fs1', title: 'Hip Hop Drum Loop', artist: 'Freesound Community', genre: 'hiphop', bpm: 95, duration: 120, tags: ['drums','loop','hiphop'], url: 'https://cdn.freesound.org/previews/613/613055_11996261-lq.mp3', source: 'freesound' },
+  { id: 'fs2', title: 'Trap Hi-Hat Pattern', artist: 'Freesound Community', genre: 'trap', bpm: 140, duration: 90, tags: ['hihat','trap','percussion'], url: 'https://cdn.freesound.org/previews/613/613056_11996261-lq.mp3', source: 'freesound' },
+  { id: 'fs3', title: 'Deep 808 Bass', artist: 'Freesound Community', genre: 'trap', bpm: 140, duration: 100, tags: ['808','bass','sub'], url: 'https://cdn.freesound.org/previews/613/613057_11996261-lq.mp3', source: 'freesound' },
+  { id: 'fs4', title: 'African Percussion', artist: 'Freesound Community', genre: 'afrobeat', bpm: 115, duration: 130, tags: ['african','percussion','tribal'], url: 'https://cdn.freesound.org/previews/613/613058_11996261-lq.mp3', source: 'freesound' },
+  { id: 'fs5', title: 'Dancehall Riddim', artist: 'Freesound Community', genre: 'dancehall', bpm: 98, duration: 140, tags: ['dancehall','riddim','reggae'], url: 'https://cdn.freesound.org/previews/613/613059_11996261-lq.mp3', source: 'freesound' },
+  { id: 'fs6', title: 'Drill Snare Roll', artist: 'Freesound Community', genre: 'drill', bpm: 142, duration: 85, tags: ['drill','snare','roll'], url: 'https://cdn.freesound.org/previews/613/613060_11996261-lq.mp3', source: 'freesound' }
+];
+
+function toggleToxicMode() {
+  toxicMode = document.getElementById('toxicMode').checked;
+  document.getElementById('toxicOverlay').classList.toggle('active', toxicMode);
+  document.getElementById('toxicBorder').classList.toggle('active', toxicMode);
+  document.getElementById('currentModeDisplay').textContent = toxicMode ? 'TOXIC' : 'Normal';
+  document.getElementById('currentModeDisplay').style.color = toxicMode ? 'var(--accent)' : '';
+  showToast(toxicMode ? 'TOXIC MODE ACTIVATED' : 'Normal mode. Play nice.');
+}
+
+function selectGenre(el) {
+  document.querySelectorAll('.genre-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  currentGenre = el.dataset.genre;
+  document.getElementById('currentGenreDisplay').textContent = genreData[currentGenre].name;
+  showToast('Switched to ' + genreData[currentGenre].name);
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  const tabMap = { write: 0, beats: 1, library: 2 };
+  const tabs = document.querySelectorAll('.nav-tab');
+  if (tabs[tabMap[tab]]) tabs[tabMap[tab]].classList.add('active');
+  document.getElementById('writeTab').style.display = tab === 'write' ? 'flex' : 'none';
+  document.getElementById('beatsTab').style.display = tab === 'beats' ? 'flex' : 'none';
+  document.getElementById('libraryTab').style.display = tab === 'library' ? 'flex' : 'none';
+  if (tab === 'library') renderSongList();
+  if (tab === 'beats' && beatResults.length === 0) searchBeats();
+}
+
+function updateLineNumbers() {
+  const editor = document.getElementById('lyricsEditor');
+  const lines = editor.value.split('\n').length;
+  document.getElementById('lineNumbers').innerHTML = Array.from({length: lines}, (_,i) => i+1).join('<br>');
+}
+
+function updateStats() {
+  const lyrics = document.getElementById('lyricsEditor').value;
+  const words = lyrics.trim() ? lyrics.trim().split(/\s+/).length : 0;
+  const lines = lyrics ? lyrics.split('\n').length : 0;
+  const bars = Math.floor(lines / 2);
+  document.getElementById('wordCount').textContent = words;
+  document.getElementById('lineCount').textContent = lines;
+  document.getElementById('barCount').textContent = bars;
+}
+
+function syncScroll() {
+  const editor = document.getElementById('lyricsEditor');
+  document.getElementById('lineNumbers').scrollTop = editor.scrollTop;
+}
+
+function insertSection(tag) {
+  const editor = document.getElementById('lyricsEditor');
+  const start = editor.selectionStart;
+  const text = editor.value;
+  const before = text.substring(0, start);
+  const after = text.substring(start);
+  const insert = '\n' + tag + '\n';
+  editor.value = before + insert + after;
+  editor.selectionStart = editor.selectionEnd = start + insert.length;
+  updateLineNumbers();
+  updateStats();
+  editor.focus();
+}
+
+function clearEditor() {
+  if (confirm('Clear everything?')) {
+    document.getElementById('lyricsEditor').value = '';
+    document.getElementById('songTitle').value = '';
+    updateLineNumbers();
+    updateStats();
+  }
+}
+
+const rhymeDict = {
+  'love': ['above','glove','dove','shove','prove','move','groove','smooth'],
+  'night': ['fight','light','right','sight','tight','bright','flight','might'],
+  'pain': ['rain','gain','chain','main','brain','train','plain','stain'],
+  'fire': ['desire','higher','tire','wire','liar','buyer','mire','pyre'],
+  'heart': ['start','part','smart','chart','apart','depart','dart','mart'],
+  'money': ['honey','sunny','funny','bunny','runny','tummy','dummy','gummy'],
+  'street': ['beat','feet','meet','sweet','heat','seat','neat','fleet'],
+  'game': ['flame','name','same','shame','blame','fame','claim','frame'],
+  'time': ['rhyme','crime','prime','climb','chime','slime','dime','lime'],
+  'life': ['strife','wife','knife','rife','afterlife','wildlife','midlife'],
+  'hustle': ['muscle','tussle','bustle','rustle','jostle','gristle','thistle'],
+  'grind': ['mind','find','kind','blind','bind','wind','behind','remind'],
+  'flow': ['go','know','show','grow','blow','snow','throw','glow'],
+  'bars': ['cars','stars','scars','mars','jars','wars','guitars','cigars'],
+  'hood': ['good','wood','stood','understood','neighborhood','likelihood'],
+  'moto': ['photo','lotto','otto','groto','libretto','stiletto'],
+  'doh': ['flow','go','know','show','grow','pro','yo','foe'],
+  'ngori': ['story','glory','worry','sorry','lorry','hurry','curry','flurry'],
+  'mawe': ['away','today','display','delay','relay','betray','convey']
+};
+
+function findRhymes() {
+  const editor = document.getElementById('lyricsEditor');
+  const selected = editor.value.substring(editor.selectionStart, editor.selectionEnd).trim();
+  if (selected) {
+    document.getElementById('rhymeInput').value = selected;
+    searchRhymes();
+  } else {
+    showToast('Select a word first');
+  }
+}
+
+function searchRhymes() {
+  const word = document.getElementById('rhymeInput').value.toLowerCase().trim();
+  const resultsDiv = document.getElementById('rhymeResults');
+  if (!word) { resultsDiv.innerHTML = '<span style="color:#444;font-size:0.75rem;">Enter a word...</span>'; return; }
+  let rhymes = rhymeDict[word] || [];
+  if (rhymes.length === 0) {
+    const fake = [word+'flow', word+'mode', word+'soul', 'mega'+word, 'ultra'+word, 'super'+word];
+    rhymes = fake;
+  }
+  resultsDiv.innerHTML = rhymes.map(r => '<span class="rhyme-word" onclick="insertRhyme(\''+r+'\')">'+r+'</span>').join('');
+}
+
+function insertRhyme(word) {
+  const editor = document.getElementById('lyricsEditor');
+  const start = editor.selectionStart;
+  editor.value = editor.value.substring(0, start) + word + editor.value.substring(start);
+  updateLineNumbers();
+  updateStats();
+  editor.focus();
+}
+
+function saveSong() {
+  const title = document.getElementById('songTitle').value || 'Untitled';
+  const lyrics = document.getElementById('lyricsEditor').value;
+  if (!lyrics.trim()) { showToast('Write something first'); return; }
+  const song = {
+    id: Date.now(), title: title, lyrics: lyrics, genre: currentGenre, toxic: toxicMode,
+    date: new Date().toLocaleDateString(), bpm: genreData[currentGenre].bpm,
+    beat: currentBeat ? { title: currentBeat.title, artist: currentBeat.artist } : null
+  };
+  songs.unshift(song);
+  try {
+    localStorage.setItem('miguel_jukebox_songs', JSON.stringify(songs));
+  } catch(e) {}
+  showToast('Saved: "' + title + '"');
+}
+
+function renderSongList() {
+  const list = document.getElementById('songList');
+  if (songs.length === 0) {
+    list.innerHTML = '<div style="color:#444;text-align:center;padding:40px;">No songs yet. Start writing.</div>';
+    return;
+  }
+  list.innerHTML = songs.map(s => 
+    '<div class="song-item" onclick="loadSong('+s.id+')">' +
+    '<div><div class="song-item-title">'+escapeHtml(s.title)+'</div>' +
+    '<div style="font-size:0.7rem;color:var(--text2);">'+s.genre+' &bull; '+s.bpm+' BPM '+(s.toxic ? '&#9760;' : '')+' '+(s.beat ? '&#127925;' : '')+'</div></div>' +
+    '<div class="song-item-date">'+s.date+'</div></div>'
+  ).join('');
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function loadSong(id) {
+  const song = songs.find(s => s.id === id);
+  if (!song) return;
+  document.getElementById('songTitle').value = song.title;
+  document.getElementById('lyricsEditor').value = song.lyrics;
+  updateLineNumbers();
+  updateStats();
+  switchTab('write');
+  showToast('Loaded: "' + song.title + '"');
+}
+
+function exportSong() {
+  const title = document.getElementById('songTitle').value || 'Untitled';
+  const lyrics = document.getElementById('lyricsEditor').value;
+  const blob = new Blob(['['+title.toUpperCase()+']\nGenre: '+currentGenre.toUpperCase()+'\nBPM: '+genreData[currentGenre].bpm+'\n\n'+lyrics], {type: 'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = title.replace(/\s+/g, '_') + '.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Exported as .txt');
+}
+
+function searchBeats() {
+  const query = document.getElementById('beatSearch').value.toLowerCase().trim();
+  const source = document.getElementById('beatSource').value;
+  const genreFilter = document.getElementById('beatGenre').value;
+  const grid = document.getElementById('beatGrid');
+  grid.innerHTML = '<div style="grid-column:1/-1;"><div class="loading-spinner"></div></div>';
+  let allBeats = [...miguelBeats, ...pixabayBeats, ...freesoundBeats];
+  if (source !== 'all') allBeats = allBeats.filter(b => b.source === source);
+  if (genreFilter !== 'all') allBeats = allBeats.filter(b => b.genre === genreFilter || b.tags.some(t => t.includes(genreFilter)));
+  if (query) allBeats = allBeats.filter(b => b.title.toLowerCase().includes(query) || b.artist.toLowerCase().includes(query) || b.tags.some(t => t.includes(query)));
+  beatResults = allBeats;
+  playlist = allBeats;
+  setTimeout(() => {
+    if (allBeats.length === 0) {
+      grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:60px; color:var(--text2);"><div style="font-size:2.5rem; margin-bottom:12px;">&#128533;</div><div style="font-size:1rem; font-weight:600;">No beats found</div><div style="font-size:0.8rem; margin-top:8px;">Try a different search or filter</div></div>';
+      return;
+    }
+    grid.innerHTML = allBeats.map((beat, idx) => {
+      const waveBars = Array.from({length: 20}, (_, i) => '<div class="beat-wave-bar" style="height:'+(Math.random()*30+5)+'px;animation-delay:'+(i*0.05)+'s"></div>').join('');
+      const sourceIcon = beat.source === 'miguel' ? '&#128308;' : beat.source === 'pixabay' ? '&#128994;' : '&#128309;';
+      return '<div class="beat-card '+(currentBeat && currentBeat.id === beat.id ? 'playing' : '')+'" id="beat-'+beat.id+'">' +
+        '<div class="beat-visual">' +
+        '<div class="beat-waveform">'+waveBars+'</div>' +
+        '<button class="beat-play-btn" onclick="playBeat('+idx+')">&#9654;</button>' +
+        '</div>' +
+        '<div class="beat-info">' +
+        '<div class="beat-title">'+escapeHtml(beat.title)+'</div>' +
+        '<div class="beat-meta">' +
+        '<span>'+sourceIcon+' '+escapeHtml(beat.artist)+'</span>' +
+        '<span>'+beat.bpm+' BPM</span>' +
+        '<span>'+formatTime(beat.duration)+'</span>' +
+        '</div>' +
+        '<div class="beat-tags">'+beat.tags.map(t => '<span class="beat-tag">'+t+'</span>').join('')+'</div>' +
+        '<div class="beat-actions">' +
+        '<button class="beat-action-btn primary" onclick="playBeat('+idx+')">Play</button>' +
+        '<button class="beat-action-btn" onclick="downloadBeat('+idx+')">Download</button>' +
+        '<button class="beat-action-btn" onclick="useBeat('+idx+')">Use This</button>' +
+        '</div>' +
+        '</div>' +
+        '</div>';
+    }).join('');
+  }, 500);
+}
+
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return m + ':' + (s < 10 ? '0' : '') + s;
+}
+
+function playBeat(idx) {
+  const beat = playlist[idx];
+  if (!beat) return;
+  playlistIndex = idx;
+  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+  currentAudio = new Audio(beat.url);
+  currentAudio.play().then(() => {
+    currentBeat = beat;
+    isPlaying = true;
+    updatePlayerUI();
+    showToast('Now playing: ' + beat.title);
+  }).catch(e => {
+    showToast('Audio blocked by browser. Try clicking again.');
+    console.error('Audio play error:', e);
+  });
+}
+
+function updatePlayerUI() {
+  if (!currentBeat) return;
+  document.querySelectorAll('.beat-card').forEach(c => c.classList.remove('playing'));
+  const card = document.getElementById('beat-' + currentBeat.id);
+  if (card) card.classList.add('playing');
+  document.getElementById('nowPlaying').classList.add('active');
+  document.getElementById('npTitle').textContent = currentBeat.title;
+  document.getElementById('npArtist').textContent = currentBeat.artist + ' | ' + currentBeat.bpm + ' BPM';
+  document.getElementById('npPlayBtn').textContent = '&#9208;';
+  document.getElementById('miniPlayerSection').style.display = 'block';
+  document.getElementById('miniPlayerTitle').textContent = currentBeat.title;
+  document.getElementById('miniPlayerArtist').textContent = currentBeat.artist;
+  document.getElementById('miniPlayBtn').textContent = '&#9208;';
+  startVisualizer();
+  if (progressInterval) clearInterval(progressInterval);
+  progressInterval = setInterval(() => {
+    if (!currentAudio) return;
+    const pct = (currentAudio.currentTime / currentAudio.duration) * 100;
+    document.getElementById('npProgressBar').style.width = pct + '%';
+    document.getElementById('npTime').textContent = formatTime(Math.floor(currentAudio.currentTime)) + ' / ' + formatTime(Math.floor(currentAudio.duration || 0));
+  }, 200);
+  currentAudio.onended = () => { skipForward(); };
+}
+
+function startVisualizer() {
+  const container = document.getElementById('miniVisualizer');
+  if (!container) return;
+  container.innerHTML = Array.from({length: 12}, () => '<div class="beat-bar" style="height:10px"></div>').join('');
+  const bars = container.querySelectorAll('.beat-bar');
+  if (visualizerInterval) clearInterval(visualizerInterval);
+  visualizerInterval = setInterval(() => {
+    bars.forEach(bar => {
+      const h = Math.random() * 50 + 5;
+      bar.style.height = h + 'px';
+    });
+  }, 100);
+}
+
+function stopVisualizer() {
+  if (visualizerInterval) {
+    clearInterval(visualizerInterval);
+    visualizerInterval = null;
+  }
+  const container = document.getElementById('miniVisualizer');
+  if (container) {
+    const bars = container.querySelectorAll('.beat-bar');
+    bars.forEach(bar => bar.style.height = '5px');
+  }
+}
+
+function togglePlay() {
+  if (!currentAudio) return;
+  if (isPlaying) {
+    currentAudio.pause();
+    isPlaying = false;
+    document.getElementById('npPlayBtn').textContent = '&#9654;';
+    document.getElementById('miniPlayBtn').textContent = '&#9654;';
+    stopVisualizer();
+  } else {
+    currentAudio.play();
+    isPlaying = true;
+    document.getElementById('npPlayBtn').textContent = '&#9208;';
+    document.getElementById('miniPlayBtn').textContent = '&#9208;';
+    startVisualizer();
+  }
+}
+
+function stopAudio() {
+  if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; isPlaying = false; }
+  document.getElementById('npPlayBtn').textContent = '&#9654;';
+  document.getElementById('miniPlayBtn').textContent = '&#9654;';
+  document.getElementById('npProgressBar').style.width = '0%';
+  stopVisualizer();
+}
+
+function skipForward() {
+  if (playlist.length === 0) return;
+  playlistIndex = (playlistIndex + 1) % playlist.length;
+  playBeat(playlistIndex);
+}
+
+function skipBackward() {
+  if (playlist.length === 0) return;
+  playlistIndex = (playlistIndex - 1 + playlist.length) % playlist.length;
+  playBeat(playlistIndex);
+}
+
+function seekAudio(e) {
+  if (!currentAudio || !currentAudio.duration) return;
+  const rect = e.currentTarget.getBoundingClientRect();
+  const pct = (e.clientX - rect.left) / rect.width;
+  currentAudio.currentTime = pct * currentAudio.duration;
+}
+
+function closePlayer() {
+  stopAudio();
+  document.getElementById('nowPlaying').classList.remove('active');
+}
+
+function downloadBeat(idx) {
+  const beat = playlist[idx];
+  if (!beat) return;
+  const a = document.createElement('a');
+  a.href = beat.url;
+  a.download = beat.title.replace(/\s+/g, '_') + '.mp3';
+  a.target = '_blank';
+  a.click();
+  showToast('Downloading: ' + beat.title);
+}
+
+function useBeat(idx) {
+  const beat = playlist[idx];
+  if (!beat) return;
+  currentBeat = beat;
+  switchTab('write');
+  showToast('Using beat: ' + beat.title + ' (' + beat.bpm + ' BPM)');
+}
+
+function addToFavorites() {
+  if (!currentBeat) return;
+  if (!favorites.find(f => f.id === currentBeat.id)) {
+    favorites.push(currentBeat);
+    try {
+      localStorage.setItem('miguel_jukebox_favorites', JSON.stringify(favorites));
+    } catch(e) {}
+    showToast('Added to favorites');
+  } else {
+    showToast('Already in favorites');
+  }
+}
+
+const aiResponses = {
+  'verse': ['Try starting with a vivid image from your hood. What is something only locals would know?','Open with a contradiction - something that should not make sense but does in your world.','Use Sheng or street slang in the first two bars to set the scene immediately.'],
+  'hook': ['Hooks need repetition. Try a 4-word phrase that hits different every time.','Make it chant-worthy. If the crowd cannot shout it back, it is not a hook.','Contrast the verse energy. If verses are dark, make the hook melodic.'],
+  'rhyme': ['Do not force perfect rhymes. Near rhymes sound more natural in Gengetone.','Try internal rhymes - rhyming words within the same line for extra bounce.','Sheng opens up rhyme possibilities English cannot touch. Use it.'],
+  'toxic': ['Toxic mode means zero empathy. Write like everyone owes you something.','Channel that anger into specifics. Name the betrayal, describe the wound.','The best toxic bars make people uncomfortable. If they squirm, you are doing it right.'],
+  'beat': ['Layer your hi-hats. 16th note rolls add tension before the drop.','Leave space in the beat. Silence hits harder than noise sometimes.'],
+  'default': ['Keep writing. The first draft is just you telling yourself the story.','Read your lyrics out loud. If it sounds awkward spoken, it flows worse on beat.','Steal from everywhere. A great artist borrows, a genius steals.','Write the hook first. Everything else is just supporting evidence.','When stuck, switch genres. Write your trap verse as a love song, then flip it back.']
+};
+
+function sendAIMessage() {
+  const input = document.getElementById('aiInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+  const chat = document.getElementById('aiChat');
+  const userDiv = document.createElement('div');
+  userDiv.className = 'ai-message user';
+  userDiv.textContent = msg;
+  chat.appendChild(userDiv);
+  const lower = msg.toLowerCase();
+  let responses = aiResponses.default;
+  if (lower.includes('verse')) responses = aiResponses.verse;
+  else if (lower.includes('hook') || lower.includes('chorus')) responses = aiResponses.hook;
+  else if (lower.includes('rhyme')) responses = aiResponses.rhyme;
+  else if (lower.includes('toxic')) responses = aiResponses.toxic;
+  else if (lower.includes('beat') || lower.includes('bpm')) responses = aiResponses.beat;
+
+  if (toxicMode && responses === aiResponses.default) {
+    responses = aiResponses.toxic;
+  }
+
+  const response = responses[Math.floor(Math.random() * responses.length)];
+  setTimeout(() => {
+    const aiDiv = document.createElement('div');
+    aiDiv.className = 'ai-message';
+    aiDiv.textContent = response;
+    chat.appendChild(aiDiv);
+    chat.scrollTop = chat.scrollHeight;
+  }, 500);
+  input.value = '';
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+window.onload = function() {
+  updateLineNumbers();
+  updateStats();
+  try {
+    const draft = JSON.parse(localStorage.getItem('miguel_jukebox_draft') || 'null');
+    if (draft && draft.lyrics) {
+      document.getElementById('songTitle').value = draft.title || '';
+      document.getElementById('lyricsEditor').value = draft.lyrics;
+      updateLineNumbers();
+      updateStats();
+    }
+  } catch(e) {}
+
+  setInterval(function() {
+    const draft = { title: document.getElementById('songTitle').value, lyrics: document.getElementById('lyricsEditor').value, genre: currentGenre };
+    try {
+      localStorage.setItem('miguel_jukebox_draft', JSON.stringify(draft));
+      const status = document.getElementById('autoSaveStatus');
+      if (status) {
+        status.textContent = 'Auto-save: ' + new Date().toLocaleTimeString();
+        status.style.color = 'var(--green)';
+        setTimeout(() => { status.style.color = '#444'; }, 2000);
+      }
+    } catch(e) {}
+  }, 10000);
+};
+
+document.addEventListener('keydown', function(e) {
+  if (e.ctrlKey && e.key === 's') { e.preventDefault(); saveSong(); }
+  if (e.ctrlKey && e.key === 'r') { e.preventDefault(); findRhymes(); }
+  if (e.ctrlKey && e.key === 'e') { e.preventDefault(); exportSong(); }
+  if (e.ctrlKey && e.key === 'b') { e.preventDefault(); switchTab('beats'); }
+});
+</script>
+</body>
+</html>
