@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MIGELS JUKEBOX - Songwriting Companion + Beat Store</title>
+<title>MIGUEL'S JUKEBOX - Songwriting Companion + Beat Store</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600;800&family=Space+Mono:wght@400;700&display=swap');
 :root{--bg:#0a0a0a;--surface:#141414;--surface2:#1e1e1e;--surface3:#252525;--accent:#ff3333;--accent2:#ff6600;--text:#e8e8e8;--text2:#888;--green:#00ff88;--blue:#3366ff;--yellow:#ffcc00;}
@@ -141,7 +141,7 @@ body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backg
 <div class="toxic-border" id="toxicBorder"></div>
 
 <header class="header">
-  <div class="logo" onclick="switchTab('write')">MIGEL<span>JUKEBOX</span></div>
+  <div class="logo" onclick="switchTab('write')">MIGUEL'S<span>JUKEBOX</span></div>
   <nav class="nav-tabs">
     <button class="nav-tab active" onclick="switchTab('write')">Write</button>
     <button class="nav-tab" onclick="switchTab('beats')">Beats</button>
@@ -188,7 +188,7 @@ body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backg
     <div style="font-size:0.75rem;color:var(--text2);line-height:1.6;">
       <div style="margin-bottom:8px;"><strong>Freesound</strong> - Free community sounds</div>
       <div style="margin-bottom:8px;"><strong>Pixabay</strong> - No copyright music</div>
-      <div style="margin-bottom:8px;"><strong>Migels Jukebox</strong> - Curated instrumentals</div>
+      <div style="margin-bottom:8px;"><strong>Miguel's Jukebox</strong> - Curated instrumentals</div>
     </div>
   </aside>
 
@@ -241,7 +241,7 @@ Tip: Go to the Beats tab to find instrumentals online." oninput="updateLineNumbe
         <option value="all">All Sources</option>
         <option value="freesound">Freesound</option>
         <option value="pixabay">Pixabay</option>
-        <option value="miguel">Migels Jukebox</option>
+        <option value="miguel">Miguel's Jukebox</option>
       </select>
       <select class="beat-filter" id="beatGenre" onchange="searchBeats()">
         <option value="all">All Genres</option>
@@ -291,9 +291,9 @@ Tip: Go to the Beats tab to find instrumentals online." oninput="updateLineNumbe
       </div>
     </div>
     <div class="panel-section" style="flex:1; display:flex; flex-direction:column;">
-      <div class="panel-title">Migels Jukebox AI</div>
+      <div class="panel-title">Miguel's Jukebox AI</div>
       <div class="ai-chat" id="aiChat">
-        <div class="ai-message">Yo, I am your Migels Jukebox AI. Need help with bars, hooks, or finding the right flow? Just ask.</div>
+        <div class="ai-message">Yo, I am your Miguel's Jukebox AI. Need help with bars, hooks, or finding the right flow? Just ask.</div>
       </div>
       <div class="ai-input-area">
         <input type="text" class="ai-input" id="aiInput" placeholder="Ask for help..." onkeyup="if(event.key=='Enter')sendAIMessage()">
@@ -359,14 +359,14 @@ const genreData = {
 };
 
 const miguelBeats = [
-  { id: 'jd1', title: 'Nairobi Night', artist: 'Migels Jukebox', genre: 'afrobeat', bpm: 108, duration: 180, tags: ['afrobeat','kenyan','bouncy'], url: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=afrobeat-112774.mp3', source: 'miguel' },
-  { id: 'jd2', title: 'Eastlands Drill', artist: 'Migels Jukebox', genre: 'drill', bpm: 142, duration: 160, tags: ['drill','dark','aggressive'], url: 'https://cdn.pixabay.com/download/audio/2022/03/24/audio_1a4c4c77e6.mp3?filename=drill-112210.mp3', source: 'miguel' },
-  { id: 'jd3', title: 'Mombasa Vibes', artist: 'Migels Jukebox', genre: 'dancehall', bpm: 96, duration: 200, tags: ['dancehall','tropical','smooth'], url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=reggae-island-110111.mp3', source: 'miguel' },
-  { id: 'jd4', title: 'Gengetone Banger', artist: 'Migels Jukebox', genre: 'hiphop', bpm: 102, duration: 175, tags: ['gengetone','street','heavy'], url: 'https://cdn.pixabay.com/download/audio/2022/11/22/audio_febc508520.mp3?filename=hip-hop-130bpm-121529.mp3', source: 'miguel' },
-  { id: 'jd5', title: 'Toxic Mode', artist: 'Migels Jukebox', genre: 'trap', bpm: 145, duration: 150, tags: ['trap','dark','toxic'], url: 'https://cdn.pixabay.com/download/audio/2022/10/25/audio_5f3a27459c.mp3?filename=trap-future-bass-royalty-free-music-123123.mp3', source: 'miguel' },
-  { id: 'jd6', title: 'Bongo Love', artist: 'Migels Jukebox', genre: 'rnb', bpm: 88, duration: 220, tags: ['bongo','rnb','romantic'], url: 'https://cdn.pixabay.com/download/audio/2022/01/21/audio_31743c58bd.mp3?filename=relaxing-mountains-rivers-streams-running-water-18178.mp3', source: 'miguel' },
-  { id: 'jd7', title: 'Kasarani Freestyle', artist: 'Migels Jukebox', genre: 'hiphop', bpm: 95, duration: 190, tags: ['boombap','freestyle','old school'], url: 'https://cdn.pixabay.com/download/audio/2022/11/02/audio_9e2f97dda7.mp3?filename=lofi-study-112191.mp3', source: 'miguel' },
-  { id: 'jd8', title: 'Riddim Rider', artist: 'Migels Jukebox', genre: 'dancehall', bpm: 98, duration: 185, tags: ['dancehall','riddim','bashment'], url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=reggae-island-110111.mp3', source: 'miguel' }
+  { id: 'jd1', title: 'Nairobi Night', artist: "Miguel\'s Jukebox", genre: 'afrobeat', bpm: 108, duration: 180, tags: ['afrobeat','kenyan','bouncy'], url: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=afrobeat-112774.mp3', source: 'miguel' },
+  { id: 'jd2', title: 'Eastlands Drill', artist: "Miguel\'s Jukebox", genre: 'drill', bpm: 142, duration: 160, tags: ['drill','dark','aggressive'], url: 'https://cdn.pixabay.com/download/audio/2022/03/24/audio_1a4c4c77e6.mp3?filename=drill-112210.mp3', source: 'miguel' },
+  { id: 'jd3', title: 'Mombasa Vibes', artist: "Miguel\'s Jukebox", genre: 'dancehall', bpm: 96, duration: 200, tags: ['dancehall','tropical','smooth'], url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=reggae-island-110111.mp3', source: 'miguel' },
+  { id: 'jd4', title: 'Gengetone Banger', artist: "Miguel\'s Jukebox", genre: 'hiphop', bpm: 102, duration: 175, tags: ['gengetone','street','heavy'], url: 'https://cdn.pixabay.com/download/audio/2022/11/22/audio_febc508520.mp3?filename=hip-hop-130bpm-121529.mp3', source: 'miguel' },
+  { id: 'jd5', title: 'Toxic Mode', artist: "Miguel\'s Jukebox", genre: 'trap', bpm: 145, duration: 150, tags: ['trap','dark','toxic'], url: 'https://cdn.pixabay.com/download/audio/2022/10/25/audio_5f3a27459c.mp3?filename=trap-future-bass-royalty-free-music-123123.mp3', source: 'miguel' },
+  { id: 'jd6', title: 'Bongo Love', artist: "Miguel\'s Jukebox", genre: 'rnb', bpm: 88, duration: 220, tags: ['bongo','rnb','romantic'], url: 'https://cdn.pixabay.com/download/audio/2022/01/21/audio_31743c58bd.mp3?filename=relaxing-mountains-rivers-streams-running-water-18178.mp3', source: 'miguel' },
+  { id: 'jd7', title: 'Kasarani Freestyle', artist: "Miguel\'s Jukebox", genre: 'hiphop', bpm: 95, duration: 190, tags: ['boombap','freestyle','old school'], url: 'https://cdn.pixabay.com/download/audio/2022/11/02/audio_9e2f97dda7.mp3?filename=lofi-study-112191.mp3', source: 'miguel' },
+  { id: 'jd8', title: 'Riddim Rider', artist: "Miguel\'s Jukebox", genre: 'dancehall', bpm: 98, duration: 185, tags: ['dancehall','riddim','bashment'], url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=reggae-island-110111.mp3', source: 'miguel' }
 ];
 
 const pixabayBeats = [
