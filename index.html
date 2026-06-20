@@ -146,6 +146,7 @@ body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backg
 </style>
 <base target="_blank">
 <base target="_blank">
+<base target="_blank">
 </head>
 <body>
 <div class="toxic-overlay" id="toxicOverlay"></div>
@@ -327,6 +328,18 @@ Tip: Go to the Beats tab to find instrumentals online." oninput="updateLineNumbe
         <button class="beat-btn" style="width:36px;height:36px;font-size:0.85rem;" onclick="stopAudio()">&#9632;</button>
       </div>
     </div>
+
+    <div class="panel-section" id="youtubeBeatSection">
+      <div class="panel-title">&#127909; YouTube Beat</div>
+      <div style="font-size:0.75rem;color:var(--text2);margin-bottom:10px;line-height:1.4;">
+        Paste a YouTube link to any beat or instrumental. Audio plays while you write.
+      </div>
+      <input type="text" class="rhyme-input" id="youtubeUrlInput" placeholder="https://youtube.com/watch?v=..." style="margin-bottom:8px;">
+      <button class="tool-btn primary" style="width:100%;margin-bottom:8px;font-size:0.8rem;" onclick="loadYouTubeBeat()">&#9654; Load & Play</button>
+      <div id="youtubePlayerContainer" style="width:1px;height:1px;overflow:hidden;position:absolute;left:-9999px;"></div>
+      <div id="youtubeBeatStatus" style="font-size:0.7rem;color:var(--text2);text-align:center;">No YouTube beat loaded</div>
+    </div>
+
     <div class="panel-section" style="flex:1; display:flex; flex-direction:column;">
       <div class="panel-title">Miguel's Jukebox AI</div>
       <div class="ai-chat" id="aiChat">
@@ -596,7 +609,7 @@ function clearEditor() {
   }
 }
 
-const rhymeDict = {
+var rhymeDict = {
   'love': ['above','glove','dove','shove','prove','move','groove','smooth'],
   'night': ['fight','light','right','sight','tight','bright','flight','might'],
   'pain': ['rain','gain','chain','main','brain','train','plain','stain'],
@@ -919,7 +932,7 @@ function addToFavorites() {
   }
 }
 
-const aiResponses = {
+var aiResponses = {
   'verse': ['Try starting with a vivid image from your hood. What is something only locals would know?','Open with a contradiction - something that should not make sense but does in your world.','Use Sheng or street slang in the first two bars to set the scene immediately.'],
   'hook': ['Hooks need repetition. Try a 4-word phrase that hits different every time.','Make it chant-worthy. If the crowd cannot shout it back, it is not a hook.','Contrast the verse energy. If verses are dark, make the hook melodic.'],
   'rhyme': ['Do not force perfect rhymes. Near rhymes sound more natural in Gengetone.','Try internal rhymes - rhyming words within the same line for extra bounce.','Sheng opens up rhyme possibilities English cannot touch. Use it.'],
@@ -1001,6 +1014,668 @@ document.addEventListener('keydown', function(e) {
   if (e.ctrlKey && e.key === 'e') { e.preventDefault(); exportSong(); }
   if (e.ctrlKey && e.key === 'b') { e.preventDefault(); switchTab('beats'); }
 });
+var rhymeDict = {
+  'love': ['above','glove','dove','shove','prove','move','groove','smooth'],
+  'night': ['fight','light','right','sight','tight','bright','flight','might'],
+  'pain': ['rain','gain','chain','main','brain','train','plain','stain'],
+  'fire': ['desire','higher','tire','wire','liar','buyer','mire','pyre'],
+  'heart': ['start','part','smart','chart','apart','depart','dart','mart'],
+  'money': ['honey','sunny','funny','bunny','runny','tummy','dummy','gummy'],
+  'street': ['beat','feet','meet','sweet','heat','seat','neat','fleet'],
+  'game': ['flame','name','same','shame','blame','fame','claim','frame'],
+  'time': ['rhyme','crime','prime','climb','chime','slime','dime','lime'],
+  'life': ['strife','wife','knife','rife','afterlife','wildlife','midlife'],
+  'hustle': ['muscle','tussle','bustle','rustle','jostle','gristle','thistle'],
+  'grind': ['mind','find','kind','blind','bind','wind','behind','remind'],
+  'flow': ['go','know','show','grow','blow','snow','throw','glow'],
+  'bars': ['cars','stars','scars','mars','jars','wars','guitars','cigars'],
+  'hood': ['good','wood','stood','understood','neighborhood','likelihood'],
+  'moto': ['photo','lotto','otto','groto','libretto','stiletto'],
+  'doh': ['flow','go','know','show','grow','pro','yo','foe'],
+  'ngori': ['story','glory','worry','sorry','lorry','hurry','curry','flurry'],
+  'mawe': ['away','today','display','delay','relay','betray','convey']
+};
+
+function findRhymes() {
+  const editor = document.getElementById('lyricsEditor');
+  const selected = editor.value.substring(editor.selectionStart, editor.selectionEnd).trim();
+  if (selected) {
+    document.getElementById('rhymeInput').value = selected;
+    searchRhymes();
+  } else {
+    showToast('Select a word first');
+  }
+}
+
+function searchRhymes() {
+  const word = document.getElementById('rhymeInput').value.toLowerCase().trim();
+  const resultsDiv = document.getElementById('rhymeResults');
+  if (!word) { resultsDiv.innerHTML = '<span style="color:#444;font-size:0.75rem;">Enter a word...</span>'; return; }
+  let rhymes = rhymeDict[word] || [];
+  if (rhymes.length === 0) {
+    const fake = [word+'flow', word+'mode', word+'soul', 'mega'+word, 'ultra'+word, 'super'+word];
+    rhymes = fake;
+  }
+  resultsDiv.innerHTML = rhymes.map(r => '<span class="rhyme-word" onclick="insertRhyme(\''+r+'\')">'+r+'</span>').join('');
+}
+
+function insertRhyme(word) {
+  const editor = document.getElementById('lyricsEditor');
+  const start = editor.selectionStart;
+  editor.value = editor.value.substring(0, start) + word + editor.value.substring(start);
+  updateLineNumbers();
+  updateStats();
+  editor.focus();
+}
+
+function saveSong() {
+  const title = document.getElementById('songTitle').value || 'Untitled';
+  const lyrics = document.getElementById('lyricsEditor').value;
+  if (!lyrics.trim()) { showToast('Write something first'); return; }
+  const song = {
+    id: Date.now(), title: title, lyrics: lyrics, genre: currentGenre, toxic: toxicMode,
+    date: new Date().toLocaleDateString(), bpm: genreData[currentGenre].bpm,
+    beat: currentBeat ? { title: currentBeat.title, artist: currentBeat.artist } : null,
+    youtubeId: youtubeVideoId || null
+  };
+  songs.unshift(song);
+  try {
+    localStorage.setItem('miguel_jukebox_songs', JSON.stringify(songs));
+  } catch(e) {}
+  showToast('Saved: "' + title + '"');
+}
+
+function renderSongList() {
+  const list = document.getElementById('songList');
+  if (songs.length === 0) {
+    list.innerHTML = '<div style="color:#444;text-align:center;padding:40px;">No songs yet. Start writing.</div>';
+    return;
+  }
+  list.innerHTML = songs.map(s => 
+    '<div class="song-item" onclick="loadSong('+s.id+')">' +
+    '<div><div class="song-item-title">'+escapeHtml(s.title)+'</div>' +
+    '<div style="font-size:0.7rem;color:var(--text2);">'+s.genre+' &bull; '+s.bpm+' BPM '+(s.toxic ? '&#9760;' : '')+' '+(s.beat ? '&#127925;' : '')+(s.youtubeId ? '&#127909;' : '')+'</div></div>' +
+    '<div class="song-item-date">'+s.date+'</div></div>'
+  ).join('');
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function loadSong(id) {
+  const song = songs.find(s => s.id === id);
+  if (!song) return;
+  document.getElementById('songTitle').value = song.title;
+  document.getElementById('lyricsEditor').value = song.lyrics;
+  updateLineNumbers();
+  updateStats();
+  switchTab('write');
+  if (song.youtubeId) {
+    document.getElementById('youtubeUrlInput').value = 'https://youtube.com/watch?v=' + song.youtubeId;
+    loadYouTubePlayer();
+  }
+  showToast('Loaded: "' + song.title + '"');
+}
+
+function exportSong() {
+  const title = document.getElementById('songTitle').value || 'Untitled';
+  const lyrics = document.getElementById('lyricsEditor').value;
+  const blob = new Blob(['['+title.toUpperCase()+']\nGenre: '+currentGenre.toUpperCase()+'\nBPM: '+genreData[currentGenre].bpm+'\n\n'+lyrics], {type: 'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = title.replace(/\s+/g, '_') + '.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Exported as .txt');
+}
+
+function searchBeats() {
+  const query = document.getElementById('beatSearch').value.toLowerCase().trim();
+  const source = document.getElementById('beatSource').value;
+  const genreFilter = document.getElementById('beatGenre').value;
+  const grid = document.getElementById('beatGrid');
+
+  if (currentBeatSource === 'freesound' && freesoundApiKey) {
+    searchFreesound();
+    return;
+  }
+
+  grid.innerHTML = '<div style="grid-column:1/-1;"><div class="loading-spinner"></div></div>';
+  let allBeats = [...miguelBeats, ...pixabayBeats, ...freesoundBeats];
+  if (source !== 'all') allBeats = allBeats.filter(b => b.source === source);
+  if (genreFilter !== 'all') allBeats = allBeats.filter(b => b.genre === genreFilter || b.tags.some(t => t.includes(genreFilter)));
+  if (query) allBeats = allBeats.filter(b => b.title.toLowerCase().includes(query) || b.artist.toLowerCase().includes(query) || b.tags.some(t => t.includes(query)));
+  beatResults = allBeats;
+  playlist = allBeats;
+  setTimeout(() => renderBeats(), 500);
+}
+
+function renderBeats() {
+  const grid = document.getElementById('beatGrid');
+  if (beatResults.length === 0) {
+    grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:60px; color:var(--text2);"><div style="font-size:2.5rem; margin-bottom:12px;">&#128533;</div><div style="font-size:1rem; font-weight:600;">No beats found</div><div style="font-size:0.8rem; margin-top:8px;">Try a different search or filter</div></div>';
+    return;
+  }
+  grid.innerHTML = beatResults.map((beat, idx) => {
+    const waveBars = Array.from({length: 20}, (_, i) => '<div class="beat-wave-bar" style="height:'+(Math.random()*30+5)+'px;animation-delay:'+(i*0.05)+'s"></div>').join('');
+    const sourceIcon = beat.source === 'miguel' ? '&#128308;' : beat.source === 'pixabay' ? '&#128994;' : beat.source === 'freesound' ? '&#128309;' : '&#127925;';
+    const bpmDisplay = beat.bpm === '?' ? '' : '<span>'+beat.bpm+' BPM</span>';
+    return '<div class="beat-card '+(currentBeat && currentBeat.id === beat.id ? 'playing' : '')+'" id="beat-'+beat.id+'">' +
+      '<div class="beat-visual">' +
+      '<div class="beat-waveform">'+waveBars+'</div>' +
+      '<button class="beat-play-btn" onclick="playBeat('+idx+')">&#9654;</button>' +
+      '</div>' +
+      '<div class="beat-info">' +
+      '<div class="beat-title">'+escapeHtml(beat.title)+'</div>' +
+      '<div class="beat-meta">' +
+      '<span>'+sourceIcon+' '+escapeHtml(beat.artist)+'</span>' +
+      bpmDisplay +
+      '<span>'+formatTime(beat.duration)+'</span>' +
+      '</div>' +
+      '<div class="beat-tags">'+beat.tags.map(t => '<span class="beat-tag">'+t+'</span>').join('')+'</div>' +
+      '<div class="beat-actions">' +
+      '<button class="beat-action-btn primary" onclick="playBeat('+idx+')">Play</button>' +
+      '<button class="beat-action-btn" onclick="downloadBeat('+idx+')">Download</button>' +
+      '<button class="beat-action-btn" onclick="useBeat('+idx+')">Use This</button>' +
+      '</div>' +
+      '</div>' +
+      '</div>';
+  }).join('');
+}
+
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return m + ':' + (s < 10 ? '0' : '') + s;
+}
+
+function playBeat(idx) {
+  const beat = playlist[idx];
+  if (!beat) return;
+  playlistIndex = idx;
+  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+  currentAudio = new Audio(beat.url);
+  currentAudio.play().then(() => {
+    currentBeat = beat;
+    isPlaying = true;
+    updatePlayerUI();
+    showToast('Now playing: ' + beat.title);
+  }).catch(e => {
+    showToast('Audio blocked by browser. Try clicking again.');
+    console.error('Audio play error:', e);
+  });
+}
+
+function updatePlayerUI() {
+  if (!currentBeat) return;
+  document.querySelectorAll('.beat-card').forEach(c => c.classList.remove('playing'));
+  const card = document.getElementById('beat-' + currentBeat.id);
+  if (card) card.classList.add('playing');
+  document.getElementById('nowPlaying').classList.add('active');
+  document.getElementById('npTitle').textContent = currentBeat.title;
+  document.getElementById('npArtist').textContent = currentBeat.artist + ' | ' + (currentBeat.bpm === '?' ? 'Unknown BPM' : currentBeat.bpm + ' BPM');
+  document.getElementById('npPlayBtn').textContent = '&#9208;';
+  document.getElementById('miniPlayerSection').style.display = 'block';
+  document.getElementById('miniPlayerTitle').textContent = currentBeat.title;
+  document.getElementById('miniPlayerArtist').textContent = currentBeat.artist;
+  document.getElementById('miniPlayBtn').textContent = '&#9208;';
+  startVisualizer();
+  if (progressInterval) clearInterval(progressInterval);
+  progressInterval = setInterval(() => {
+    if (!currentAudio) return;
+    const pct = (currentAudio.currentTime / currentAudio.duration) * 100;
+    document.getElementById('npProgressBar').style.width = pct + '%';
+    document.getElementById('npTime').textContent = formatTime(Math.floor(currentAudio.currentTime)) + ' / ' + formatTime(Math.floor(currentAudio.duration || 0));
+  }, 200);
+  currentAudio.onended = () => { skipForward(); };
+}
+
+function startVisualizer() {
+  const container = document.getElementById('miniVisualizer');
+  if (!container) return;
+  container.innerHTML = Array.from({length: 12}, () => '<div class="beat-bar" style="height:10px"></div>').join('');
+  const bars = container.querySelectorAll('.beat-bar');
+  if (visualizerInterval) clearInterval(visualizerInterval);
+  visualizerInterval = setInterval(() => {
+    bars.forEach(bar => {
+      const h = Math.random() * 50 + 5;
+      bar.style.height = h + 'px';
+    });
+  }, 100);
+}
+
+function stopVisualizer() {
+  if (visualizerInterval) {
+    clearInterval(visualizerInterval);
+    visualizerInterval = null;
+  }
+  const container = document.getElementById('miniVisualizer');
+  if (container) {
+    const bars = container.querySelectorAll('.beat-bar');
+    bars.forEach(bar => bar.style.height = '5px');
+  }
+}
+
+function togglePlay() {
+  if (!currentAudio) return;
+  if (isPlaying) {
+    currentAudio.pause();
+    isPlaying = false;
+    document.getElementById('npPlayBtn').textContent = '&#9654;';
+    document.getElementById('miniPlayBtn').textContent = '&#9654;';
+    stopVisualizer();
+  } else {
+    currentAudio.play();
+    isPlaying = true;
+    document.getElementById('npPlayBtn').textContent = '&#9208;';
+    document.getElementById('miniPlayBtn').textContent = '&#9208;';
+    startVisualizer();
+  }
+}
+
+function stopAudio() {
+  if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; isPlaying = false; }
+  document.getElementById('npPlayBtn').textContent = '&#9654;';
+  document.getElementById('miniPlayBtn').textContent = '&#9654;';
+  document.getElementById('npProgressBar').style.width = '0%';
+  stopVisualizer();
+}
+
+function skipForward() {
+  if (playlist.length === 0) return;
+  playlistIndex = (playlistIndex + 1) % playlist.length;
+  playBeat(playlistIndex);
+}
+
+function skipBackward() {
+  if (playlist.length === 0) return;
+  playlistIndex = (playlistIndex - 1 + playlist.length) % playlist.length;
+  playBeat(playlistIndex);
+}
+
+function seekAudio(e) {
+  if (!currentAudio || !currentAudio.duration) return;
+  const rect = e.currentTarget.getBoundingClientRect();
+  const pct = (e.clientX - rect.left) / rect.width;
+  currentAudio.currentTime = pct * currentAudio.duration;
+}
+
+function closePlayer() {
+  stopAudio();
+  document.getElementById('nowPlaying').classList.remove('active');
+}
+
+function downloadBeat(idx) {
+  const beat = playlist[idx];
+  if (!beat) return;
+  const a = document.createElement('a');
+  a.href = beat.url;
+  a.download = beat.title.replace(/\s+/g, '_') + '.mp3';
+  a.target = '_blank';
+  a.click();
+  showToast('Downloading: ' + beat.title);
+}
+
+function useBeat(idx) {
+  const beat = playlist[idx];
+  if (!beat) return;
+  currentBeat = beat;
+  switchTab('write');
+  showToast('Using beat: ' + beat.title + (beat.bpm !== '?' ? ' (' + beat.bpm + ' BPM)' : ''));
+}
+
+function addToFavorites() {
+  if (!currentBeat) return;
+  if (!favorites.find(f => f.id === currentBeat.id)) {
+    favorites.push(currentBeat);
+    try {
+      localStorage.setItem('miguel_jukebox_favorites', JSON.stringify(favorites));
+    } catch(e) {}
+    showToast('Added to favorites');
+  } else {
+    showToast('Already in favorites');
+  }
+}
+
+var aiResponses = {
+  'verse': ['Try starting with a vivid image from your hood. What is something only locals would know?','Open with a contradiction - something that should not make sense but does in your world.','Use Sheng or street slang in the first two bars to set the scene immediately.'],
+  'hook': ['Hooks need repetition. Try a 4-word phrase that hits different every time.','Make it chant-worthy. If the crowd cannot shout it back, it is not a hook.','Contrast the verse energy. If verses are dark, make the hook melodic.'],
+  'rhyme': ['Do not force perfect rhymes. Near rhymes sound more natural in Gengetone.','Try internal rhymes - rhyming words within the same line for extra bounce.','Sheng opens up rhyme possibilities English cannot touch. Use it.'],
+  'toxic': ['Toxic mode means zero empathy. Write like everyone owes you something.','Channel that anger into specifics. Name the betrayal, describe the wound.','The best toxic bars make people uncomfortable. If they squirm, you are doing it right.'],
+  'beat': ['Layer your hi-hats. 16th note rolls add tension before the drop.','Leave space in the beat. Silence hits harder than noise sometimes.'],
+  'default': ['Keep writing. The first draft is just you telling yourself the story.','Read your lyrics out loud. If it sounds awkward spoken, it flows worse on beat.','Steal from everywhere. A great artist borrows, a genius steals.','Write the hook first. Everything else is just supporting evidence.','When stuck, switch genres. Write your trap verse as a love song, then flip it back.']
+};
+
+function sendAIMessage() {
+  const input = document.getElementById('aiInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+  const chat = document.getElementById('aiChat');
+  const userDiv = document.createElement('div');
+  userDiv.className = 'ai-message user';
+  userDiv.textContent = msg;
+  chat.appendChild(userDiv);
+  const lower = msg.toLowerCase();
+  let responses = aiResponses.default;
+  if (lower.includes('verse')) responses = aiResponses.verse;
+  else if (lower.includes('hook') || lower.includes('chorus')) responses = aiResponses.hook;
+  else if (lower.includes('rhyme')) responses = aiResponses.rhyme;
+  else if (lower.includes('toxic')) responses = aiResponses.toxic;
+  else if (lower.includes('beat') || lower.includes('bpm')) responses = aiResponses.beat;
+
+  if (toxicMode && responses === aiResponses.default) {
+    responses = aiResponses.toxic;
+  }
+
+  const response = responses[Math.floor(Math.random() * responses.length)];
+  setTimeout(() => {
+    const aiDiv = document.createElement('div');
+    aiDiv.className = 'ai-message';
+    aiDiv.textContent = response;
+    chat.appendChild(aiDiv);
+    chat.scrollTop = chat.scrollHeight;
+  }, 500);
+  input.value = '';
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+window.onload = function() {
+  updateLineNumbers();
+  updateStats();
+  renderYouTubeHistory();
+  try {
+    const draft = JSON.parse(localStorage.getItem('miguel_jukebox_draft') || 'null');
+    if (draft && draft.lyrics) {
+      document.getElementById('songTitle').value = draft.title || '';
+      document.getElementById('lyricsEditor').value = draft.lyrics;
+      updateLineNumbers();
+      updateStats();
+    }
+  } catch(e) {}
+
+  setInterval(function() {
+    const draft = { title: document.getElementById('songTitle').value, lyrics: document.getElementById('lyricsEditor').value, genre: currentGenre };
+    try {
+      localStorage.setItem('miguel_jukebox_draft', JSON.stringify(draft));
+      const status = document.getElementById('autoSaveStatus');
+      if (status) {
+        status.textContent = 'Auto-save: ' + new Date().toLocaleTimeString();
+        status.style.color = 'var(--green)';
+        setTimeout(() => { status.style.color = '#444'; }, 2000);
+      }
+    } catch(e) {}
+  }, 10000);
+};
+
+document.addEventListener('keydown', function(e) {
+  if (e.ctrlKey && e.key === 's') { e.preventDefault(); saveSong(); }
+  if (e.ctrlKey && e.key === 'r') { e.preventDefault(); findRhymes(); }
+  if (e.ctrlKey && e.key === 'e') { e.preventDefault(); exportSong(); }
+  if (e.ctrlKey && e.key === 'b') { e.preventDefault(); switchTab('beats'); }
+  if (e.ctrlKey && e.key === 'y') { e.preventDefault(); showYoutubeFloat(); }
+});
+
+
+/* ========== YOUTUBE BEAT INTEGRATION ========== */
+
+let youtubePlayer = null;
+let youtubeVideoId = null;
+let youtubeIsPlaying = false;
+
+// Load YouTube IFrame API
+function loadYouTubeAPI() {
+  if (window.YT && window.YT.Player) return;
+  const tag = document.createElement('script');
+  tag.src = "https://www.youtube.com/iframe_api";
+  const firstScript = document.getElementsByTagName('script')[0];
+  firstScript.parentNode.insertBefore(tag, firstScript);
+}
+
+// Called by YouTube API when ready
+function onYouTubeIframeAPIReady() {
+  console.log('YouTube API ready');
+}
+
+// Extract video ID from various YouTube URL formats
+function extractYouTubeId(url) {
+  if (!url) return null;
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
+    /^([a-zA-Z0-9_-]{11})$/
+  ];
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+  return null;
+}
+
+// Load a YouTube beat
+function loadYouTubeBeat() {
+  const url = document.getElementById('youtubeUrlInput').value.trim();
+  const videoId = extractYouTubeId(url);
+  const statusDiv = document.getElementById('youtubeBeatStatus');
+
+  if (!videoId) {
+    statusDiv.textContent = 'Invalid YouTube URL. Paste a full link or video ID.';
+    statusDiv.style.color = 'var(--accent)';
+    showToast('Invalid YouTube URL');
+    return;
+  }
+
+  youtubeVideoId = videoId;
+  statusDiv.textContent = 'Loading...';
+  statusDiv.style.color = 'var(--yellow)';
+
+  // Stop any existing audio
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio = null;
+    isPlaying = false;
+  }
+
+  // Create or recreate the YouTube player
+  const container = document.getElementById('youtubePlayerContainer');
+  container.innerHTML = '<div id="youtubePlayer"></div>';
+
+  if (window.YT && window.YT.Player) {
+    createYouTubePlayer(videoId);
+  } else {
+    loadYouTubeAPI();
+    const checkInterval = setInterval(() => {
+      if (window.YT && window.YT.Player) {
+        clearInterval(checkInterval);
+        createYouTubePlayer(videoId);
+      }
+    }, 500);
+    setTimeout(() => clearInterval(checkInterval), 15000);
+  }
+}
+
+function createYouTubePlayer(videoId) {
+  const statusDiv = document.getElementById('youtubeBeatStatus');
+  try {
+    youtubePlayer = new YT.Player('youtubePlayer', {
+      height: '1',
+      width: '1',
+      videoId: videoId,
+      playerVars: {
+        autoplay: 1,
+        controls: 0,
+        disablekb: 1,
+        fs: 0,
+        modestbranding: 1,
+        rel: 0,
+        showinfo: 0,
+        iv_load_policy: 3,
+        start: 0
+      },
+      events: {
+        'onReady': onYouTubePlayerReady,
+        'onStateChange': onYouTubePlayerStateChange,
+        'onError': onYouTubePlayerError
+      }
+    });
+  } catch (e) {
+    statusDiv.textContent = 'Error loading player. Try again.';
+    statusDiv.style.color = 'var(--accent)';
+    console.error('YouTube player creation error:', e);
+  }
+}
+
+function onYouTubePlayerReady(event) {
+  const statusDiv = document.getElementById('youtubeBeatStatus');
+  const title = (youtubePlayer.getVideoData && youtubePlayer.getVideoData().title) ? youtubePlayer.getVideoData().title : 'YouTube Beat';
+  statusDiv.textContent = 'Playing: ' + title;
+  statusDiv.style.color = 'var(--green)';
+  youtubeIsPlaying = true;
+
+  document.getElementById('miniPlayerSection').style.display = 'block';
+  document.getElementById('miniPlayerTitle').textContent = title;
+  document.getElementById('miniPlayerArtist').textContent = 'YouTube | Audio Only';
+  document.getElementById('miniPlayBtn').innerHTML = '&#9208;';
+  document.getElementById('npPlayBtn').innerHTML = '&#9208;';
+  document.getElementById('nowPlaying').classList.add('active');
+  document.getElementById('npTitle').textContent = title;
+  document.getElementById('npArtist').textContent = 'YouTube | Audio Only';
+
+  startVisualizer();
+  showToast('YouTube beat loaded!');
+}
+
+function onYouTubePlayerStateChange(event) {
+  if (event.data === YT.PlayerState.PLAYING) {
+    youtubeIsPlaying = true;
+    document.getElementById('miniPlayBtn').innerHTML = '&#9208;';
+    document.getElementById('npPlayBtn').innerHTML = '&#9208;';
+    startVisualizer();
+  } else if (event.data === YT.PlayerState.PAUSED) {
+    youtubeIsPlaying = false;
+    document.getElementById('miniPlayBtn').innerHTML = '&#9654;';
+    document.getElementById('npPlayBtn').innerHTML = '&#9654;';
+    stopVisualizer();
+  } else if (event.data === YT.PlayerState.ENDED) {
+    youtubeIsPlaying = false;
+    document.getElementById('miniPlayBtn').innerHTML = '&#9654;';
+    document.getElementById('npPlayBtn').innerHTML = '&#9654;';
+    stopVisualizer();
+  }
+}
+
+function onYouTubePlayerError(event) {
+  const statusDiv = document.getElementById('youtubeBeatStatus');
+  statusDiv.textContent = 'Playback error. Video may be restricted.';
+  statusDiv.style.color = 'var(--accent)';
+  youtubeIsPlaying = false;
+  showToast('YouTube playback error');
+}
+
+// Override togglePlay to handle YouTube player
+const originalTogglePlay = togglePlay;
+togglePlay = function() {
+  if (youtubePlayer && youtubeVideoId) {
+    if (youtubeIsPlaying) {
+      youtubePlayer.pauseVideo();
+      youtubeIsPlaying = false;
+      document.getElementById('miniPlayBtn').innerHTML = '&#9654;';
+      document.getElementById('npPlayBtn').innerHTML = '&#9654;';
+      stopVisualizer();
+    } else {
+      youtubePlayer.playVideo();
+      youtubeIsPlaying = true;
+      document.getElementById('miniPlayBtn').innerHTML = '&#9208;';
+      document.getElementById('npPlayBtn').innerHTML = '&#9208;';
+      startVisualizer();
+    }
+    return;
+  }
+  originalTogglePlay();
+};
+
+// Override stopAudio to handle YouTube player
+const originalStopAudio = stopAudio;
+stopAudio = function() {
+  if (youtubePlayer && youtubeVideoId) {
+    youtubePlayer.stopVideo();
+    youtubeIsPlaying = false;
+    document.getElementById('miniPlayBtn').innerHTML = '&#9654;';
+    document.getElementById('npPlayBtn').innerHTML = '&#9654;';
+    document.getElementById('npProgressBar').style.width = '0%';
+    stopVisualizer();
+    return;
+  }
+  originalStopAudio();
+};
+
+// Override seekAudio for YouTube
+const originalSeekAudio = seekAudio;
+seekAudio = function(e) {
+  if (youtubePlayer && youtubeVideoId && youtubePlayer.getDuration) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pct = (e.clientX - rect.left) / rect.width;
+    const duration = youtubePlayer.getDuration();
+    if (duration) {
+      youtubePlayer.seekTo(duration * pct, true);
+    }
+    return;
+  }
+  originalSeekAudio(e);
+};
+
+// Update progress bar for YouTube
+function updateYouTubeProgress() {
+  if (!youtubePlayer || !youtubeVideoId || !youtubeIsPlaying) return;
+  try {
+    const current = youtubePlayer.getCurrentTime ? youtubePlayer.getCurrentTime() : 0;
+    const duration = youtubePlayer.getDuration ? youtubePlayer.getDuration() : 0;
+    if (duration) {
+      const pct = (current / duration) * 100;
+      document.getElementById('npProgressBar').style.width = pct + '%';
+      document.getElementById('npTime').textContent = formatTime(Math.floor(current)) + ' / ' + formatTime(Math.floor(duration));
+    }
+  } catch (e) {}
+}
+
+// Start progress polling when YouTube is active
+setInterval(() => {
+  if (youtubePlayer && youtubeVideoId && youtubeIsPlaying) {
+    updateYouTubeProgress();
+  }
+}, 200);
+
+// Render YouTube history from saved songs
+function renderYouTubeHistory() {
+  const ytSongs = songs.filter(s => s.youtubeId);
+  if (ytSongs.length > 0) {
+    console.log('YouTube songs in library:', ytSongs.length);
+  }
+}
+
+// Show floating YouTube player (Ctrl+Y shortcut)
+function showYoutubeFloat() {
+  const section = document.getElementById('youtubeBeatSection');
+  if (section) {
+    section.scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('youtubeUrlInput').focus();
+  }
+  showToast('Paste a YouTube beat link');
+}
+
+// Load YouTube API on startup
+loadYouTubeAPI();
+
+
 </script>
 </body>
 </html>
